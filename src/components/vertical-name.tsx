@@ -2,32 +2,30 @@ type VerticalNameProps = {
   primary: string;
   secondary?: string;
   emphasized?: boolean;
+  reverse?: boolean;
 };
 
 export function VerticalName({
   primary,
   secondary,
   emphasized = false,
+  reverse = false,
 }: VerticalNameProps) {
   return (
     <div className="min-w-0">
-      <div className="flex min-w-0 items-baseline gap-2">
-      <span
-        className={`block truncate text-lg leading-none sm:text-xl ${
-          emphasized ? "font-semibold text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
+      <div
+        className={`flex min-w-0 items-baseline gap-2 ${
+          reverse ? "flex-row-reverse justify-start" : ""
         }`}
-        title={secondary}
       >
-        {primary || "読込中"}
-      </span>
-      {secondary ? (
         <span
-          className="fine-label data-sans block truncate text-[10px] uppercase text-[color:var(--ink-soft)]"
+          className={`block truncate pb-1 text-[26px] leading-[1.18] sm:text-[32px] ${
+            emphasized ? "text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
+          }`}
           title={secondary}
         >
-          {secondary}
+          {primary || "読込中"}
         </span>
-      ) : null}
       </div>
     </div>
   );

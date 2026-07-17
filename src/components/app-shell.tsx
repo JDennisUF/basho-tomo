@@ -66,6 +66,9 @@ function HydratedAppShell() {
   const [division, setDivision] = useState<Division>(() =>
     readPreference<Division>("division", "Makuuchi"),
   );
+  const [torikumiNameMode, setTorikumiNameMode] = useState<"jp" | "en">(() =>
+    readPreference<"jp" | "en">("torikumi-name-mode", "jp"),
+  );
   const [dayOverride, setDayOverride] = useState<number | null>(null);
   const [basho, setBasho] = useState<BashoSummary | null>(null);
   const [banzukeMap, setBanzukeMap] = useState<Record<Division, BanzukeResponse | null>>({
@@ -88,6 +91,10 @@ function HydratedAppShell() {
   useEffect(() => {
     writePreference("favorites", favoriteIds);
   }, [favoriteIds]);
+
+  useEffect(() => {
+    writePreference("torikumi-name-mode", torikumiNameMode);
+  }, [torikumiNameMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -332,7 +339,7 @@ function HydratedAppShell() {
               </p>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-4">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -392,6 +399,41 @@ function HydratedAppShell() {
                   ))}
                 </select>
               </label>
+
+              <label className="flex flex-col gap-2">
+                <span
+                  className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
+                  title="Torikumi shikona display"
+                >
+                  取組名
+                </span>
+                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTorikumiNameMode("jp")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      torikumiNameMode === "jp"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Japanese shikona"
+                  >
+                    日本語
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTorikumiNameMode("en")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      torikumiNameMode === "en"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="English shikona"
+                  >
+                    English
+                  </button>
+                </div>
+              </label>
             </div>
           </div>
         </header>
@@ -431,6 +473,7 @@ function HydratedAppShell() {
               torikumi={hydratedTorikumi}
               isLoading={isLoadingTorikumi}
               error={torikumiError}
+              nameMode={torikumiNameMode}
             />
             <BanzukePanel
               banzuke={hydratedBanzukeMap[division]}
