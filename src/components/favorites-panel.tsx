@@ -18,12 +18,12 @@ export function FavoritesPanel({
       <div className="section-accent" />
       <div className="flex items-end justify-between gap-4 border-b border-[color:var(--line)] pb-4">
         <div>
-          <div className="fine-label text-xs text-[color:var(--ink-soft)]" title="Favorites">
+          <div className="fine-label text-base text-[color:var(--ink-soft)]" title="Favorites">
             贔屓
           </div>
-          <h2 className="mt-2 text-2xl">気になる力士</h2>
+          <h2 className="mt-2 text-[34px] leading-none">気になる力士</h2>
         </div>
-        <div className="data-sans text-xs text-[color:var(--ink-soft)]" title="Favorite rikishi">
+        <div className="data-sans text-base text-[color:var(--ink-soft)]" title="Favorite rikishi">
           {favoriteIds.length} 名
         </div>
       </div>
@@ -40,15 +40,15 @@ export function FavoritesPanel({
               className="flex items-center justify-between border-b border-[color:var(--line)] pb-2"
             >
               <div>
-                <div className="text-base">{rikishi.shikona}</div>
-                <div className="data-sans mt-0.5 text-[11px] text-[color:var(--ink-soft)]">
+                <div className="text-xl">{rikishi.shikona}</div>
+                <div className="data-sans mt-0.5 text-[15px] text-[color:var(--ink-soft)]">
                   {rikishi.rank ?? "番付未詳"} / {rikishi.division === "Makuuchi" ? "幕内" : "十両"}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => onToggle(rikishi.id)}
-                className="fine-label rounded-full border border-[color:var(--line)] px-3 py-1 text-[10px] text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                className="fine-label rounded-full border border-[color:var(--line)] px-3 py-1 text-xs text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
                 title={rikishi.shikonaEn ? `Remove favorite: ${rikishi.shikonaEn}` : "Remove favorite"}
               >
                 外す

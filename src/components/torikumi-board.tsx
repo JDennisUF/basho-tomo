@@ -12,15 +12,31 @@ type TorikumiBoardProps = {
 function WinnerMark({ active }: { active?: boolean }) {
   return (
     <span
-      className={`h-6 w-6 rounded-full border text-center text-[11px] leading-6 ${
+      className={`h-5 w-5 rounded-full border ${
         active
-          ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-          : "border-[color:var(--line)] text-[color:var(--line-strong)]"
+          ? "border-[color:var(--ink)] bg-white"
+          : "border-[color:var(--ink)] bg-[color:var(--ink)]"
       }`}
-      title={active ? "Winner mark" : "No winner mark"}
-    >
-      勝
-    </span>
+      title={active ? "Winner: white circle" : "Loser: black circle"}
+    />
+  );
+}
+
+function MatchIdentityDebug({
+  id,
+  matchedById,
+}: {
+  id?: number;
+  matchedById?: boolean;
+}) {
+  if (!id || matchedById) {
+    return null;
+  }
+
+  return (
+    <div className="mt-1 text-[10px] text-[color:var(--accent)]" title="Rikishi ID did not match cached rikishi index">
+      ID未一致 {id}
+    </div>
   );
 }
 
@@ -63,7 +79,7 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
     <section className="section-frame overflow-hidden">
       <div className="section-accent" />
       <div className="border-b border-[color:var(--line)] px-4 py-3 sm:px-5">
-        <div className="fine-label text-xs text-[color:var(--ink-soft)]" title="Today's torikumi">
+        <div className="fine-label text-base text-[color:var(--ink-soft)]" title="Today's torikumi">
           本日取組
         </div>
       </div>
@@ -73,23 +89,21 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
             key={`${match.day ?? torikumi.day}-${match.matchNo ?? index}`}
             className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2.5 sm:px-4"
           >
-            <div className="flex items-center justify-start gap-2">
+            <div className="flex min-w-0 items-center justify-start gap-2">
               <WinnerMark active={match.west?.win} />
               <VerticalName
-                primary={match.west?.shikona ?? "未定"}
+                primary={match.west?.shikona ?? ""}
                 secondary={match.west?.shikonaEn}
                 emphasized={match.west?.win}
               />
               <div>
-                <div
-                  className="fine-label data-sans text-[10px] uppercase text-[color:var(--ink-soft)]"
-                  title="West"
-                >
-                  西
-                </div>
                 <div className="mt-1 text-[11px] text-[color:var(--ink-soft)]" title={match.west?.shikonaEn}>
                   {match.west?.rank ?? ""}
                 </div>
+                <MatchIdentityDebug
+                  id={match.west?.rikishiId}
+                  matchedById={match.west?.matchedById}
+                />
               </div>
             </div>
 
@@ -108,20 +122,18 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex min-w-0 items-center justify-end gap-2">
               <div className="text-right">
-                <div
-                  className="fine-label data-sans text-[10px] uppercase text-[color:var(--ink-soft)]"
-                  title="East"
-                >
-                  東
-                </div>
                 <div className="mt-1 text-[11px] text-[color:var(--ink-soft)]" title={match.east?.shikonaEn}>
                   {match.east?.rank ?? ""}
                 </div>
+                <MatchIdentityDebug
+                  id={match.east?.rikishiId}
+                  matchedById={match.east?.matchedById}
+                />
               </div>
               <VerticalName
-                primary={match.east?.shikona ?? "未定"}
+                primary={match.east?.shikona ?? ""}
                 secondary={match.east?.shikonaEn}
                 emphasized={match.east?.win}
               />

@@ -45,6 +45,7 @@ export type MatchSide = {
   shikonaEn?: string;
   rank?: string;
   win?: boolean;
+  matchedById?: boolean;
 };
 
 export type TorikumiMatch = {

@@ -1,40 +1,79 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BanzukePanel } from "@/components/banzuke-panel";
 import { FavoritesPanel } from "@/components/favorites-panel";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
 import {
+  enrichBanzukeWithRikishi,
+  enrichTorikumiWithRikishi,
   extractRikishiFromBanzuke,
+  fetchAllRikishisIndex,
   fetchBanzuke,
   fetchBasho,
   fetchTorikumi,
+  getBashoDayFromStartDate,
+  formatBashoDate,
   getBashoLabel,
   getCurrentBashoId,
   getDefaultDay,
   getDivisionLabel,
+  getTorikumiCachePolicy,
+  isPastOrFinishedBasho,
   listRecentBashoIds,
 } from "@/lib/sumo-api";
-import { BashoSummary, BanzukeResponse, Division, RikishiSummary, TorikumiResponse } from "@/lib/types";
+import {
+  BashoSummary,
+  BanzukeResponse,
+  Division,
+  RikishiSummary,
+  TorikumiResponse,
+} from "@/lib/types";
 
 const DIVISIONS: Division[] = ["Makuuchi", "Juryo"];
-const STABLE_VERSION = "v1-banzuke-cache";
-const TORIKUMI_VERSION = "v1-torikumi-cache";
-const TORIKUMI_MAX_AGE_MS = 1000 * 60 * 10;
+const STABLE_VERSION = "v2-banzuke-cache";
+const BASHO_SUMMARY_VERSION = "v2-basho-summary-cache";
+const TORIKUMI_VERSION = "v6-torikumi-cache";
+const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
+const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 
 export function AppShell() {
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  if (!isMounted) {
+    return (
+      <main className="mx-auto min-h-screen max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <div className="texture-panel overflow-hidden rounded-[8px]">
+          <div className="border-b border-[color:var(--line)] px-5 py-6 sm:px-8">
+            <div className="fine-label text-base text-[color:var(--ink-soft)]">本場所案内</div>
+            <h1 className="mt-2 text-4xl sm:text-5xl">読込中</h1>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  return <HydratedAppShell />;
+}
+
+function HydratedAppShell() {
   const [bashoId, setBashoId] = useState(getCurrentBashoId);
   const [division, setDivision] = useState<Division>(() =>
     readPreference<Division>("division", "Makuuchi"),
   );
-  const [day, setDay] = useState(getDefaultDay);
+  const [dayOverride, setDayOverride] = useState<number | null>(null);
   const [basho, setBasho] = useState<BashoSummary | null>(null);
   const [banzukeMap, setBanzukeMap] = useState<Record<Division, BanzukeResponse | null>>({
     Makuuchi: null,
     Juryo: null,
   });
-  const [rikishi, setRikishi] = useState<RikishiSummary[]>([]);
+  const [bashoRikishi, setBashoRikishi] = useState<RikishiSummary[]>([]);
+  const [rikishiIndex, setRikishiIndex] = useState<RikishiSummary[]>([]);
   const [torikumi, setTorikumi] = useState<TorikumiResponse | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<number[]>(() =>
     readPreference<number[]>("favorites", []),
@@ -53,8 +92,45 @@ export function AppShell() {
   useEffect(() => {
     let cancelled = false;
 
+    async function loadRikishiIndex() {
+      const cached = readCache<RikishiSummary[]>("rikishi-index", RIKISHI_INDEX_VERSION);
+      if (cached) {
+        if (!cancelled) {
+          setRikishiIndex(cached);
+        }
+        return;
+      }
+
+      const nextIndex = await fetchAllRikishisIndex();
+      writeCache("rikishi-index", RIKISHI_INDEX_VERSION, nextIndex);
+
+      if (!cancelled) {
+        setRikishiIndex(nextIndex);
+      }
+    }
+
+    loadRikishiIndex().catch(() => {
+      // Leave the app usable if the global rikishi index load fails.
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
     async function loadStableData() {
-      const cachedBasho = readCache<BashoSummary>(`basho:${bashoId}`, STABLE_VERSION);
+      const currentBashoId = getCurrentBashoId();
+      const cachedBasho =
+        bashoId === currentBashoId
+          ? readTimedCache<BashoSummary>(
+              `basho:${bashoId}`,
+              BASHO_SUMMARY_VERSION,
+              CURRENT_BASHO_SUMMARY_MAX_AGE_MS,
+            )
+          : readCache<BashoSummary>(`basho:${bashoId}`, BASHO_SUMMARY_VERSION);
       const cachedMakuuchi = readCache<BanzukeResponse>(
         `banzuke:${bashoId}:Makuuchi`,
         STABLE_VERSION,
@@ -66,28 +142,37 @@ export function AppShell() {
         if (!cancelled) {
           setBasho(cachedBasho);
           setBanzukeMap({ Makuuchi: cachedMakuuchi, Juryo: cachedJuryo });
-          setRikishi(cachedRikishi);
+          setBashoRikishi(cachedRikishi);
         }
         return;
       }
 
       const [nextBasho, nextMakuuchi, nextJuryo] = await Promise.all([
-        fetchBasho(bashoId),
-        fetchBanzuke(bashoId, "Makuuchi"),
-        fetchBanzuke(bashoId, "Juryo"),
+        cachedBasho ? Promise.resolve(cachedBasho) : fetchBasho(bashoId),
+        cachedMakuuchi ? Promise.resolve(cachedMakuuchi) : fetchBanzuke(bashoId, "Makuuchi"),
+        cachedJuryo ? Promise.resolve(cachedJuryo) : fetchBanzuke(bashoId, "Juryo"),
       ]);
 
-      const nextRikishi = extractRikishiFromBanzuke(bashoId, [nextMakuuchi, nextJuryo]);
+      const nextRikishi =
+        cachedRikishi ?? extractRikishiFromBanzuke(bashoId, [nextMakuuchi, nextJuryo]);
 
-      writeCache(`basho:${bashoId}`, STABLE_VERSION, nextBasho);
-      writeCache(`banzuke:${bashoId}:Makuuchi`, STABLE_VERSION, nextMakuuchi);
-      writeCache(`banzuke:${bashoId}:Juryo`, STABLE_VERSION, nextJuryo);
-      writeCache(`rikishi:${bashoId}`, STABLE_VERSION, nextRikishi);
+      if (!cachedBasho) {
+        writeCache(`basho:${bashoId}`, BASHO_SUMMARY_VERSION, nextBasho);
+      }
+      if (!cachedMakuuchi) {
+        writeCache(`banzuke:${bashoId}:Makuuchi`, STABLE_VERSION, nextMakuuchi);
+      }
+      if (!cachedJuryo) {
+        writeCache(`banzuke:${bashoId}:Juryo`, STABLE_VERSION, nextJuryo);
+      }
+      if (!cachedRikishi) {
+        writeCache(`rikishi:${bashoId}`, STABLE_VERSION, nextRikishi);
+      }
 
       if (!cancelled) {
         setBasho(nextBasho);
         setBanzukeMap({ Makuuchi: nextMakuuchi, Juryo: nextJuryo });
-        setRikishi(nextRikishi);
+        setBashoRikishi(nextRikishi);
       }
     }
 
@@ -102,6 +187,10 @@ export function AppShell() {
     };
   }, [bashoId]);
 
+  const day =
+    dayOverride ??
+    (basho?.startDate ? getBashoDayFromStartDate(basho.startDate) : getDefaultDay());
+
   useEffect(() => {
     let cancelled = false;
 
@@ -110,11 +199,15 @@ export function AppShell() {
       setTorikumiError(null);
 
       const cacheKey = `torikumi:${bashoId}:${division}:${day}`;
-      const cached = readTimedCache<TorikumiResponse>(
-        cacheKey,
-        TORIKUMI_VERSION,
-        TORIKUMI_MAX_AGE_MS,
-      );
+      const policy = getTorikumiCachePolicy({
+        bashoId,
+        startDate: basho?.startDate,
+        endDate: basho?.endDate,
+        selectedDay: day,
+      });
+      const cached = policy.immutable
+        ? readCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION)
+        : readTimedCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION, policy.ttlMs);
 
       if (cached) {
         if (!cancelled) {
@@ -150,11 +243,61 @@ export function AppShell() {
     return () => {
       cancelled = true;
     };
-  }, [bashoId, day, division]);
+  }, [bashoId, day, division, basho?.startDate, basho?.endDate]);
+
+  const rikishi = useMemo(() => {
+    if (rikishiIndex.length === 0) {
+      return bashoRikishi;
+    }
+
+    const merged = new Map<number, RikishiSummary>();
+
+    for (const entry of rikishiIndex) {
+      merged.set(entry.id, entry);
+    }
+
+    for (const entry of bashoRikishi) {
+      const indexed = merged.get(entry.id);
+      merged.set(entry.id, {
+        id: entry.id,
+        shikona: indexed?.shikona ?? entry.shikona,
+        shikonaEn: indexed?.shikonaEn ?? entry.shikonaEn,
+        heya: indexed?.heya ?? entry.heya,
+        rank: entry.rank ?? indexed?.rank,
+        division: entry.division,
+      });
+    }
+
+    return [...merged.values()];
+  }, [bashoRikishi, rikishiIndex]);
+
+  const cacheModeLabel = basho
+    ? isPastOrFinishedBasho(bashoId, basho.endDate)
+      ? "固定"
+      : getTorikumiCachePolicy({
+            bashoId,
+            startDate: basho.startDate,
+            endDate: basho.endDate,
+            selectedDay: day,
+          }).immutable
+        ? "固定"
+        : "短期"
+    : "読込中";
 
   const favorites = useMemo(
     () => rikishi.filter((entry) => favoriteIds.includes(entry.id)),
     [favoriteIds, rikishi],
+  );
+  const hydratedTorikumi = useMemo(
+    () => enrichTorikumiWithRikishi(torikumi, rikishi),
+    [torikumi, rikishi],
+  );
+  const hydratedBanzukeMap = useMemo(
+    () => ({
+      Makuuchi: enrichBanzukeWithRikishi(banzukeMap.Makuuchi, rikishi),
+      Juryo: enrichBanzukeWithRikishi(banzukeMap.Juryo, rikishi),
+    }),
+    [banzukeMap, rikishi],
   );
 
   function toggleFavorite(rikishiEntry: RikishiSummary) {
@@ -178,26 +321,29 @@ export function AppShell() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div
-                className="fine-label hover-hint text-xs text-[color:var(--ink-soft)]"
+                className="fine-label hover-hint text-base text-[color:var(--ink-soft)]"
                 title="Current grand sumo basho"
               >
                 本場所案内
               </div>
-              <h1 className="mt-2 text-3xl sm:text-4xl">{getBashoLabel(bashoId)}</h1>
-              <p className="data-sans mt-2 max-w-2xl text-sm leading-5 text-[color:var(--ink-soft)]">
+              <h1 className="mt-2 text-4xl sm:text-5xl">{getBashoLabel(bashoId)}</h1>
+              <p className="data-sans mt-2 max-w-2xl text-base leading-6 text-[color:var(--ink-soft)]">
                 本日の取組を中心に、幕内と十両を静かに追うための場。
               </p>
             </div>
 
             <div className="grid gap-2 sm:grid-cols-3">
               <label className="flex flex-col gap-2">
-                <span className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Basho">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
                 </span>
                 <select
                   value={bashoId}
-                  onChange={(event) => setBashoId(event.target.value)}
-                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-1.5 text-sm"
+                  onChange={(event) => {
+                    setBashoId(event.target.value);
+                    setDayOverride(null);
+                  }}
+                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {recentBashoIds.map((value) => (
                     <option key={value} value={value}>
@@ -208,7 +354,7 @@ export function AppShell() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Division">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Division">
                   番付
                 </span>
                 <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
@@ -217,7 +363,7 @@ export function AppShell() {
                       key={item}
                       type="button"
                       onClick={() => setDivision(item)}
-                      className={`rounded-[6px] px-3 py-1.5 text-sm transition ${
+                      className={`rounded-[6px] px-3 py-2 text-base transition ${
                         division === item
                           ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                           : "text-[color:var(--ink-soft)]"
@@ -231,13 +377,13 @@ export function AppShell() {
               </label>
 
               <label className="flex flex-col gap-2">
-                <span className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Day">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Day">
                   日目
                 </span>
                 <select
                   value={day}
-                  onChange={(event) => setDay(Number(event.target.value))}
-                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-1.5 text-sm"
+                  onChange={(event) => setDayOverride(Number(event.target.value))}
+                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {Array.from({ length: 15 }, (_, index) => index + 1).map((value) => (
                     <option key={value} value={value}>
@@ -250,34 +396,44 @@ export function AppShell() {
           </div>
         </header>
 
-        <section className="grid gap-3 border-b border-[color:var(--line)] px-5 py-3 sm:grid-cols-3 sm:px-8">
+        <section className="grid gap-3 border-b border-[color:var(--line)] px-5 py-3 sm:grid-cols-4 sm:px-8">
           <div>
-            <div className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Current division">
+            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Current division">
               現在
             </div>
-            <div className="mt-1 text-base">{getDivisionLabel(division)}</div>
+            <div className="mt-1 text-xl sm:text-2xl">{getDivisionLabel(division)}</div>
           </div>
           <div>
-            <div className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Selected day">
+            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Selected day">
               本日
             </div>
-            <div className="mt-1 text-base">{day}日目</div>
+            <div className="mt-1 text-xl sm:text-2xl">{day}日目</div>
           </div>
           <div>
-            <div className="fine-label hover-hint text-[10px] text-[color:var(--ink-soft)]" title="Cached rikishi count">
+            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Cached rikishi count">
               人数
             </div>
-            <div className="mt-1 text-base data-sans" title="Cached basho rikishi">
+            <div className="mt-1 text-xl data-sans sm:text-2xl" title="Cached basho rikishi">
               {rikishi.length} 名
             </div>
+          </div>
+          <div>
+            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Cache mode for selected torikumi">
+              保持
+            </div>
+            <div className="mt-1 text-xl sm:text-2xl">{cacheModeLabel}</div>
           </div>
         </section>
 
         <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_320px] lg:px-6 lg:py-5">
           <div className="space-y-5">
-            <TorikumiBoard torikumi={torikumi} isLoading={isLoadingTorikumi} error={torikumiError} />
+            <TorikumiBoard
+              torikumi={hydratedTorikumi}
+              isLoading={isLoadingTorikumi}
+              error={torikumiError}
+            />
             <BanzukePanel
-              banzuke={banzukeMap[division]}
+              banzuke={hydratedBanzukeMap[division]}
               favoriteIds={favoriteIds}
               onToggleFavorite={toggleFavorite}
             />
@@ -287,29 +443,29 @@ export function AppShell() {
             <section className="section-frame p-5 sm:p-6">
               <div className="section-accent" />
               <div className="border-b border-[color:var(--line)] pb-4">
-                <div className="fine-label text-xs text-[color:var(--ink-soft)]" title="Basho notes">
+                <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Basho notes">
                   場所覚書
                 </div>
-                <h2 className="mt-2 text-xl">概要</h2>
+                <h2 className="mt-2 text-3xl">概要</h2>
               </div>
               <dl className="mt-4 space-y-3">
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="hover-hint text-sm text-[color:var(--ink-soft)]" title="Start date">
+                  <dt className="hover-hint text-lg text-[color:var(--ink-soft)]" title="Start date">
                     開始
                   </dt>
-                  <dd className="data-sans text-[13px]">{basho?.startDate ?? "未詳"}</dd>
+                  <dd className="data-sans text-lg">{formatBashoDate(basho?.startDate)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="hover-hint text-sm text-[color:var(--ink-soft)]" title="Final day">
+                  <dt className="hover-hint text-lg text-[color:var(--ink-soft)]" title="Final day">
                     千秋楽
                   </dt>
-                  <dd className="data-sans text-[13px]">{basho?.endDate ?? "未詳"}</dd>
+                  <dd className="data-sans text-lg">{formatBashoDate(basho?.endDate)}</dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <dt className="hover-hint text-sm text-[color:var(--ink-soft)]" title="Champion">
+                  <dt className="hover-hint text-lg text-[color:var(--ink-soft)]" title="Champion">
                     優勝
                   </dt>
-                  <dd className="text-[13px]">{basho?.yusho ?? "進行中"}</dd>
+                  <dd className="text-lg">{basho?.yusho ?? "進行中"}</dd>
                 </div>
               </dl>
             </section>

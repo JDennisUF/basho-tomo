@@ -10,18 +10,18 @@ export function VerticalName({
   emphasized = false,
 }: VerticalNameProps) {
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="min-w-0">
       <span
-        className={`vertical-name text-lg leading-none sm:text-xl ${
+        className={`block truncate text-lg leading-none sm:text-xl ${
           emphasized ? "font-semibold text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
         }`}
         title={secondary}
       >
-        {primary}
+        {primary || "読込中"}
       </span>
       {secondary ? (
         <span
-          className="fine-label data-sans hidden text-[9px] uppercase text-[color:var(--ink-soft)] lg:block"
+          className="fine-label data-sans mt-1 block truncate text-[10px] uppercase text-[color:var(--ink-soft)]"
           title={secondary}
         >
           {secondary}
