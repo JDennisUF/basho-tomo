@@ -448,7 +448,20 @@ export function getDefaultDay(date = new Date()) {
 }
 
 export function getDivisionLabel(division: Division) {
-  return division === "Makuuchi" ? "幕内" : "十両";
+  switch (division) {
+    case "Makuuchi":
+      return "幕内";
+    case "Juryo":
+      return "十両";
+    case "Makushita":
+      return "幕下";
+    case "Sandanme":
+      return "三段目";
+    case "Jonidan":
+      return "序二段";
+    case "Jonokuchi":
+      return "序ノ口";
+  }
 }
 
 export function getBashoLabel(bashoId: string) {
@@ -470,7 +483,8 @@ export function getDisplayShikona(value?: string) {
     return "";
   }
 
-  return value.split("　")[0]?.trim() ?? value;
+  const trimmed = value.split("　")[0]?.trim() ?? value;
+  return trimmed.replace(/[（(].*?[）)]/g, "").trim();
 }
 
 const RANK_MAP: Record<string, string> = {
@@ -693,7 +707,7 @@ export function getTorikumiCachePolicy(args: {
   }
 
   if (args.selectedDay === currentDay) {
-    return { immutable: false, ttlMs: 1000 * 60 * 15 };
+    return { immutable: false, ttlMs: 1000 * 60 * 10 };
   }
 
   return { immutable: false, ttlMs: 1000 * 60 * 60 * 6 };

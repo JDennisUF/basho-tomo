@@ -1,4 +1,10 @@
-export type Division = "Makuuchi" | "Juryo";
+export type Division =
+  | "Makuuchi"
+  | "Juryo"
+  | "Makushita"
+  | "Sandanme"
+  | "Jonidan"
+  | "Jonokuchi";
 
 export type BashoSummary = {
   bashoDate: string;

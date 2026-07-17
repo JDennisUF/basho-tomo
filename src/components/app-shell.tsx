@@ -31,12 +31,30 @@ import {
   TorikumiResponse,
 } from "@/lib/types";
 
-const DIVISIONS: Division[] = ["Makuuchi", "Juryo"];
+const DIVISIONS: Division[] = [
+  "Makuuchi",
+  "Juryo",
+  "Makushita",
+  "Sandanme",
+  "Jonidan",
+  "Jonokuchi",
+];
 const STABLE_VERSION = "v2-banzuke-cache";
 const BASHO_SUMMARY_VERSION = "v2-basho-summary-cache";
 const TORIKUMI_VERSION = "v6-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+
+function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
+  return {
+    Makuuchi: null,
+    Juryo: null,
+    Makushita: null,
+    Sandanme: null,
+    Jonidan: null,
+    Jonokuchi: null,
+  };
+}
 
 export function AppShell() {
   const isMounted = useSyncExternalStore(
@@ -71,16 +89,16 @@ function HydratedAppShell() {
   );
   const [dayOverride, setDayOverride] = useState<number | null>(null);
   const [basho, setBasho] = useState<BashoSummary | null>(null);
-  const [banzukeMap, setBanzukeMap] = useState<Record<Division, BanzukeResponse | null>>({
-    Makuuchi: null,
-    Juryo: null,
-  });
+  const [banzukeMap, setBanzukeMap] = useState<Record<Division, BanzukeResponse | null>>(
+    createEmptyBanzukeMap,
+  );
   const [bashoRikishi, setBashoRikishi] = useState<RikishiSummary[]>([]);
   const [rikishiIndex, setRikishiIndex] = useState<RikishiSummary[]>([]);
   const [torikumi, setTorikumi] = useState<TorikumiResponse | null>(null);
   const [favoriteIds, setFavoriteIds] = useState<number[]>(() =>
     readPreference<number[]>("favorites", []),
   );
+  const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
   const [torikumiError, setTorikumiError] = useState<string | null>(null);
 
@@ -143,25 +161,81 @@ function HydratedAppShell() {
         STABLE_VERSION,
       );
       const cachedJuryo = readCache<BanzukeResponse>(`banzuke:${bashoId}:Juryo`, STABLE_VERSION);
+      const cachedMakushita = readCache<BanzukeResponse>(
+        `banzuke:${bashoId}:Makushita`,
+        STABLE_VERSION,
+      );
+      const cachedSandanme = readCache<BanzukeResponse>(
+        `banzuke:${bashoId}:Sandanme`,
+        STABLE_VERSION,
+      );
+      const cachedJonidan = readCache<BanzukeResponse>(
+        `banzuke:${bashoId}:Jonidan`,
+        STABLE_VERSION,
+      );
+      const cachedJonokuchi = readCache<BanzukeResponse>(
+        `banzuke:${bashoId}:Jonokuchi`,
+        STABLE_VERSION,
+      );
       const cachedRikishi = readCache<RikishiSummary[]>(`rikishi:${bashoId}`, STABLE_VERSION);
 
-      if (cachedBasho && cachedMakuuchi && cachedJuryo && cachedRikishi) {
+      if (
+        cachedBasho &&
+        cachedMakuuchi &&
+        cachedJuryo &&
+        cachedMakushita &&
+        cachedSandanme &&
+        cachedJonidan &&
+        cachedJonokuchi &&
+        cachedRikishi
+      ) {
         if (!cancelled) {
           setBasho(cachedBasho);
-          setBanzukeMap({ Makuuchi: cachedMakuuchi, Juryo: cachedJuryo });
+          setBanzukeMap({
+            Makuuchi: cachedMakuuchi,
+            Juryo: cachedJuryo,
+            Makushita: cachedMakushita,
+            Sandanme: cachedSandanme,
+            Jonidan: cachedJonidan,
+            Jonokuchi: cachedJonokuchi,
+          });
           setBashoRikishi(cachedRikishi);
         }
         return;
       }
 
-      const [nextBasho, nextMakuuchi, nextJuryo] = await Promise.all([
+      const [
+        nextBasho,
+        nextMakuuchi,
+        nextJuryo,
+        nextMakushita,
+        nextSandanme,
+        nextJonidan,
+        nextJonokuchi,
+      ] = await Promise.all([
         cachedBasho ? Promise.resolve(cachedBasho) : fetchBasho(bashoId),
         cachedMakuuchi ? Promise.resolve(cachedMakuuchi) : fetchBanzuke(bashoId, "Makuuchi"),
         cachedJuryo ? Promise.resolve(cachedJuryo) : fetchBanzuke(bashoId, "Juryo"),
+        cachedMakushita
+          ? Promise.resolve(cachedMakushita)
+          : fetchBanzuke(bashoId, "Makushita"),
+        cachedSandanme ? Promise.resolve(cachedSandanme) : fetchBanzuke(bashoId, "Sandanme"),
+        cachedJonidan ? Promise.resolve(cachedJonidan) : fetchBanzuke(bashoId, "Jonidan"),
+        cachedJonokuchi
+          ? Promise.resolve(cachedJonokuchi)
+          : fetchBanzuke(bashoId, "Jonokuchi"),
       ]);
 
       const nextRikishi =
-        cachedRikishi ?? extractRikishiFromBanzuke(bashoId, [nextMakuuchi, nextJuryo]);
+        cachedRikishi ??
+        extractRikishiFromBanzuke(bashoId, [
+          nextMakuuchi,
+          nextJuryo,
+          nextMakushita,
+          nextSandanme,
+          nextJonidan,
+          nextJonokuchi,
+        ]);
 
       if (!cachedBasho) {
         writeCache(`basho:${bashoId}`, BASHO_SUMMARY_VERSION, nextBasho);
@@ -172,13 +246,32 @@ function HydratedAppShell() {
       if (!cachedJuryo) {
         writeCache(`banzuke:${bashoId}:Juryo`, STABLE_VERSION, nextJuryo);
       }
+      if (!cachedMakushita) {
+        writeCache(`banzuke:${bashoId}:Makushita`, STABLE_VERSION, nextMakushita);
+      }
+      if (!cachedSandanme) {
+        writeCache(`banzuke:${bashoId}:Sandanme`, STABLE_VERSION, nextSandanme);
+      }
+      if (!cachedJonidan) {
+        writeCache(`banzuke:${bashoId}:Jonidan`, STABLE_VERSION, nextJonidan);
+      }
+      if (!cachedJonokuchi) {
+        writeCache(`banzuke:${bashoId}:Jonokuchi`, STABLE_VERSION, nextJonokuchi);
+      }
       if (!cachedRikishi) {
         writeCache(`rikishi:${bashoId}`, STABLE_VERSION, nextRikishi);
       }
 
       if (!cancelled) {
         setBasho(nextBasho);
-        setBanzukeMap({ Makuuchi: nextMakuuchi, Juryo: nextJuryo });
+        setBanzukeMap({
+          Makuuchi: nextMakuuchi,
+          Juryo: nextJuryo,
+          Makushita: nextMakushita,
+          Sandanme: nextSandanme,
+          Jonidan: nextJonidan,
+          Jonokuchi: nextJonokuchi,
+        });
         setBashoRikishi(nextRikishi);
       }
     }
@@ -212,9 +305,12 @@ function HydratedAppShell() {
         endDate: basho?.endDate,
         selectedDay: day,
       });
-      const cached = policy.immutable
-        ? readCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION)
-        : readTimedCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION, policy.ttlMs);
+      const shouldBypassCache = torikumiRefreshNonce > 0;
+      const cached = shouldBypassCache
+        ? null
+        : policy.immutable
+          ? readCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION)
+          : readTimedCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION, policy.ttlMs);
 
       if (cached) {
         if (!cancelled) {
@@ -250,7 +346,7 @@ function HydratedAppShell() {
     return () => {
       cancelled = true;
     };
-  }, [bashoId, day, division, basho?.startDate, basho?.endDate]);
+  }, [bashoId, day, division, basho?.startDate, basho?.endDate, torikumiRefreshNonce]);
 
   const rikishi = useMemo(() => {
     if (rikishiIndex.length === 0) {
@@ -303,7 +399,11 @@ function HydratedAppShell() {
     () => ({
       Makuuchi: enrichBanzukeWithRikishi(banzukeMap.Makuuchi, rikishi),
       Juryo: enrichBanzukeWithRikishi(banzukeMap.Juryo, rikishi),
-    }),
+      Makushita: enrichBanzukeWithRikishi(banzukeMap.Makushita, rikishi),
+      Sandanme: enrichBanzukeWithRikishi(banzukeMap.Sandanme, rikishi),
+      Jonidan: enrichBanzukeWithRikishi(banzukeMap.Jonidan, rikishi),
+      Jonokuchi: enrichBanzukeWithRikishi(banzukeMap.Jonokuchi, rikishi),
+    } satisfies Record<Division, BanzukeResponse | null>),
     [banzukeMap, rikishi],
   );
 
@@ -317,6 +417,10 @@ function HydratedAppShell() {
 
   function toggleFavoriteById(id: number) {
     setFavoriteIds((current) => current.filter((entry) => entry !== id));
+  }
+
+  function refreshTorikumiNow() {
+    setTorikumiRefreshNonce((current) => current + 1);
   }
 
   const recentBashoIds = listRecentBashoIds(bashoId);
@@ -364,13 +468,13 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Division">
                   番付
                 </span>
-                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
                   {DIVISIONS.map((item) => (
                     <button
                       key={item}
                       type="button"
                       onClick={() => setDivision(item)}
-                      className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      className={`rounded-[6px] px-2 py-2 text-sm transition ${
                         division === item
                           ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                           : "text-[color:var(--ink-soft)]"
@@ -474,6 +578,7 @@ function HydratedAppShell() {
               isLoading={isLoadingTorikumi}
               error={torikumiError}
               nameMode={torikumiNameMode}
+              onRefresh={refreshTorikumiNow}
             />
             <BanzukePanel
               banzuke={hydratedBanzukeMap[division]}

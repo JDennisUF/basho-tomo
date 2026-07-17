@@ -9,6 +9,7 @@ type TorikumiBoardProps = {
   isLoading: boolean;
   error: string | null;
   nameMode: "jp" | "en";
+  onRefresh: () => void;
 };
 
 function WinnerMark({ active }: { active?: boolean }) {
@@ -47,6 +48,7 @@ export function TorikumiBoard({
   isLoading,
   error,
   nameMode,
+  onRefresh,
 }: TorikumiBoardProps) {
   if (isLoading) {
     return (
@@ -85,16 +87,24 @@ export function TorikumiBoard({
   return (
     <section className="section-frame overflow-hidden">
       <div className="section-accent" />
-      <div className="border-b border-[color:var(--line)] px-4 py-3 sm:px-5">
+      <div className="flex items-center justify-between border-b border-[color:var(--line)] px-4 py-3 sm:px-5">
         <div className="fine-label text-xl text-[color:var(--ink-soft)]" title="Today's torikumi">
           本日取組
         </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          className="fine-label rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+          title="Refresh torikumi now"
+        >
+          更新
+        </button>
       </div>
       <div className="divide-y divide-[color:var(--line)]">
         {torikumi.matches.map((match, index) => (
           <article
             key={`${match.day ?? torikumi.day}-${match.matchNo ?? index}`}
-            className="grid grid-cols-[1fr_auto_1fr] items-center gap-5 px-4 py-4 sm:px-5"
+            className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-3 sm:px-5"
           >
             <div className="flex min-w-0 items-center justify-start gap-4">
               <WinnerMark active={match.west?.win} />
@@ -110,7 +120,7 @@ export function TorikumiBoard({
             </div>
 
             <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex items-center gap-5 text-[15px] text-[color:var(--ink-soft)]">
+              <div className="flex items-center gap-4 text-[15px] text-[color:var(--ink-soft)]">
                 <span className="max-w-28 truncate text-right" title={match.west?.rank}>
                   {formatRankLabel(match.west?.rank)}
                 </span>
@@ -125,7 +135,7 @@ export function TorikumiBoard({
                 </span>
               </div>
               <div
-                className="hover-hint max-w-24 text-center text-[15px] leading-6 text-[color:var(--ink-soft)]"
+                className="hover-hint max-w-24 text-center text-[15px] leading-5 text-[color:var(--ink-soft)]"
                 title={match.kimarite ? `Winning technique: ${match.kimarite}` : "Scheduled bout"}
               >
                 {match.kimarite ?? "予定"}
