@@ -465,6 +465,84 @@ export function formatBashoDate(value?: string) {
   return value.split("T")[0] ?? value;
 }
 
+export function getDisplayShikona(value?: string) {
+  if (!value) {
+    return "";
+  }
+
+  return value.split("　")[0]?.trim() ?? value;
+}
+
+const RANK_MAP: Record<string, string> = {
+  Yokozuna: "横綱",
+  Ozeki: "大関",
+  Sekiwake: "関脇",
+  Komusubi: "小結",
+  Maegashira: "前頭",
+  Juryo: "十両",
+  Makushita: "幕下",
+  Sandanme: "三段目",
+  Jonidan: "序二段",
+  Jonokuchi: "序ノ口",
+};
+
+const SIDE_MAP: Record<string, string> = {
+  East: "東",
+  West: "西",
+};
+
+const KANJI_NUMERALS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+
+function toKanjiNumber(value: number) {
+  if (value <= 0) {
+    return "";
+  }
+
+  if (value < 10) {
+    return KANJI_NUMERALS[value];
+  }
+
+  if (value === 10) {
+    return "十";
+  }
+
+  if (value < 20) {
+    return `十${KANJI_NUMERALS[value - 10]}`;
+  }
+
+  const tens = Math.floor(value / 10);
+  const ones = value % 10;
+  return `${KANJI_NUMERALS[tens]}十${KANJI_NUMERALS[ones]}`;
+}
+
+export function formatRankLabel(rank?: string) {
+  if (!rank) {
+    return "";
+  }
+
+  const match = rank.match(
+    /^(Yokozuna|Ozeki|Sekiwake|Komusubi|Maegashira|Juryo|Makushita|Sandanme|Jonidan|Jonokuchi)\s+(\d+)\s+(East|West)$/i,
+  );
+
+  if (match) {
+    const [, rankName, rankNumber, side] = match;
+    const mappedRank = RANK_MAP[rankName] ?? rankName;
+    const mappedSide = SIDE_MAP[side] ?? side;
+    return `${mappedRank} ${mappedSide}${toKanjiNumber(Number(rankNumber))}`;
+  }
+
+  const sideOnlyMatch = rank.match(
+    /^(Yokozuna|Ozeki|Sekiwake|Komusubi)\s+(East|West)$/i,
+  );
+
+  if (sideOnlyMatch) {
+    const [, rankName, side] = sideOnlyMatch;
+    return `${RANK_MAP[rankName] ?? rankName} ${SIDE_MAP[side] ?? side}`;
+  }
+
+  return rank;
+}
+
 export function enrichTorikumiWithRikishi(
   torikumi: TorikumiResponse | null,
   rikishi: RikishiSummary[],

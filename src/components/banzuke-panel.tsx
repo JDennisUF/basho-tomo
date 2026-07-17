@@ -1,6 +1,7 @@
 "use client";
 
 import { BanzukeResponse, RikishiSummary } from "@/lib/types";
+import { getDisplayShikona } from "@/lib/sumo-api";
 
 type BanzukePanelProps = {
   banzuke: BanzukeResponse | null;
@@ -71,7 +72,9 @@ export function BanzukePanel({
           >
             <div className="flex items-center justify-between gap-2">
               <div>
-                <div className="text-base">{record.west?.shikonaJp ?? record.west?.shikonaEn ?? "空位"}</div>
+                <div className="text-base">
+                  {getDisplayShikona(record.west?.shikonaJp) || record.west?.shikonaEn || "空位"}
+                </div>
                 <div className="data-sans mt-0.5 text-[11px] text-[color:var(--ink-soft)]">
                   {record.west?.rank ?? ""}
                 </div>
@@ -83,7 +86,9 @@ export function BanzukePanel({
                     onToggleFavorite({
                       id: record.west?.rikishiID ?? 0,
                       shikona:
-                        record.west?.shikonaJp ?? record.west?.shikonaEn ?? String(record.west?.rikishiID),
+                        getDisplayShikona(record.west?.shikonaJp) ||
+                        record.west?.shikonaEn ||
+                        String(record.west?.rikishiID),
                       shikonaEn: record.west?.shikonaEn,
                       rank: record.west?.rank,
                       division: banzuke.division,
@@ -101,7 +106,9 @@ export function BanzukePanel({
                     onToggleFavorite({
                       id: record.east?.rikishiID ?? 0,
                       shikona:
-                        record.east?.shikonaJp ?? record.east?.shikonaEn ?? String(record.east?.rikishiID),
+                        getDisplayShikona(record.east?.shikonaJp) ||
+                        record.east?.shikonaEn ||
+                        String(record.east?.rikishiID),
                       shikonaEn: record.east?.shikonaEn,
                       rank: record.east?.rank,
                       division: banzuke.division,
@@ -111,7 +118,9 @@ export function BanzukePanel({
                 />
               ) : null}
               <div>
-                <div className="text-base">{record.east?.shikonaJp ?? record.east?.shikonaEn ?? "空位"}</div>
+                <div className="text-base">
+                  {getDisplayShikona(record.east?.shikonaJp) || record.east?.shikonaEn || "空位"}
+                </div>
                 <div className="data-sans mt-0.5 text-[11px] text-[color:var(--ink-soft)]">
                   {record.east?.rank ?? ""}
                 </div>

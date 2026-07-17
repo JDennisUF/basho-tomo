@@ -1,6 +1,7 @@
 "use client";
 
 import { RikishiSummary } from "@/lib/types";
+import { getDisplayShikona } from "@/lib/sumo-api";
 
 type FavoritesPanelProps = {
   favorites: RikishiSummary[];
@@ -40,7 +41,7 @@ export function FavoritesPanel({
               className="flex items-center justify-between border-b border-[color:var(--line)] pb-2"
             >
               <div>
-                <div className="text-xl">{rikishi.shikona}</div>
+                <div className="text-xl">{getDisplayShikona(rikishi.shikona)}</div>
                 <div className="data-sans mt-0.5 text-[15px] text-[color:var(--ink-soft)]">
                   {rikishi.rank ?? "番付未詳"} / {rikishi.division === "Makuuchi" ? "幕内" : "十両"}
                 </div>

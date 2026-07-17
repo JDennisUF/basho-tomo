@@ -2,6 +2,7 @@
 
 import { TorikumiResponse } from "@/lib/types";
 import { VerticalName } from "@/components/vertical-name";
+import { formatRankLabel, getDisplayShikona } from "@/lib/sumo-api";
 
 type TorikumiBoardProps = {
   torikumi: TorikumiResponse | null;
@@ -92,13 +93,13 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
             <div className="flex min-w-0 items-center justify-start gap-2">
               <WinnerMark active={match.west?.win} />
               <VerticalName
-                primary={match.west?.shikona ?? ""}
+                primary={getDisplayShikona(match.west?.shikona)}
                 secondary={match.west?.shikonaEn}
                 emphasized={match.west?.win}
               />
               <div>
-                <div className="mt-1 text-[11px] text-[color:var(--ink-soft)]" title={match.west?.shikonaEn}>
-                  {match.west?.rank ?? ""}
+                <div className="mt-2 text-xs text-[color:var(--ink-soft)]" title={match.west?.shikonaEn}>
+                  {formatRankLabel(match.west?.rank)}
                 </div>
                 <MatchIdentityDebug
                   id={match.west?.rikishiId}
@@ -124,8 +125,8 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
 
             <div className="flex min-w-0 items-center justify-end gap-2">
               <div className="text-right">
-                <div className="mt-1 text-[11px] text-[color:var(--ink-soft)]" title={match.east?.shikonaEn}>
-                  {match.east?.rank ?? ""}
+                <div className="mt-2 text-xs text-[color:var(--ink-soft)]" title={match.east?.shikonaEn}>
+                  {formatRankLabel(match.east?.rank)}
                 </div>
                 <MatchIdentityDebug
                   id={match.east?.rikishiId}
@@ -133,7 +134,7 @@ export function TorikumiBoard({ torikumi, isLoading, error }: TorikumiBoardProps
                 />
               </div>
               <VerticalName
-                primary={match.east?.shikona ?? ""}
+                primary={getDisplayShikona(match.east?.shikona)}
                 secondary={match.east?.shikonaEn}
                 emphasized={match.east?.win}
               />
