@@ -54,6 +54,10 @@ select {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 ::selection {
   background: rgba(154, 60, 49, 0.18);
 }

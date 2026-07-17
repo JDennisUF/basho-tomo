@@ -3,6 +3,8 @@ import {
   BanzukeResponse,
   BashoSummary,
   Division,
+  HeadToHeadMatch,
+  HeadToHeadResponse,
   MatchSide,
   RikishiSummary,
   TorikumiMatch,
@@ -408,6 +410,64 @@ export async function fetchTorikumi(
   };
 }
 
+export async function fetchHeadToHead(
+  rikishiId: number,
+  opponentId: number,
+): Promise<HeadToHeadResponse> {
+  const data = (await getJson(`/rikishi/${rikishiId}/matches/${opponentId}`)) as Record<
+    string,
+    unknown
+  >;
+
+  const matchesSource = Array.isArray(data.matches)
+    ? (data.matches as Array<Record<string, unknown>>)
+    : [];
+
+  const matches: HeadToHeadMatch[] = matchesSource.map((match) => ({
+    bashoId: stringOrUndefined(match.bashoId) ?? "",
+    division: (firstString(match.division) as Division | undefined) ?? "Makuuchi",
+    day: numberOrUndefined(match.day),
+    matchNo: numberOrUndefined(match.matchNo ?? match.matchNumber),
+    eastId: numberOrUndefined(match.eastId ?? match.eastID),
+    eastShikona: firstString(match.eastShikona, match.eastShikonaJp, match.eastName),
+    eastRank: firstString(match.eastRank),
+    westId: numberOrUndefined(match.westId ?? match.westID),
+    westShikona: firstString(match.westShikona, match.westShikonaJp, match.westName),
+    westRank: firstString(match.westRank),
+    kimarite: firstString(match.kimarite),
+    winnerId: numberOrUndefined(match.winnerId ?? match.winnerID),
+    winnerEn: firstString(match.winnerEn),
+    winnerJp: firstString(match.winnerJp, match.winnerJP),
+  }));
+
+  return {
+    kimariteLosses:
+      typeof data.kimariteLosses === "object" && data.kimariteLosses !== null
+        ? Object.fromEntries(
+            Object.entries(data.kimariteLosses as Record<string, unknown>).flatMap(
+              ([key, value]) => {
+                const count = numberOrUndefined(value);
+                return count ? [[key, count]] : [];
+              },
+            ),
+          )
+        : {},
+    kimariteWins:
+      typeof data.kimariteWins === "object" && data.kimariteWins !== null
+        ? Object.fromEntries(
+            Object.entries(data.kimariteWins as Record<string, unknown>).flatMap(([key, value]) => {
+              const count = numberOrUndefined(value);
+              return count ? [[key, count]] : [];
+            }),
+          )
+        : {},
+    matches,
+    opponentWins: numberOrUndefined(data.opponentWins) ?? 0,
+    rikishiWins: numberOrUndefined(data.rikishiWins) ?? 0,
+    total: numberOrUndefined(data.total) ?? matches.length,
+  };
+}
+
 export function extractRikishiFromBanzuke(
   _bashoId: string,
   divisions: BanzukeResponse[],
@@ -555,6 +615,15 @@ export function formatRankLabel(rank?: string) {
   }
 
   return rank;
+}
+
+export function formatRecordLabel(wins?: number, losses?: number, absences?: number) {
+  if (wins === undefined && losses === undefined && absences === undefined) {
+    return "";
+  }
+
+  const base = `${wins ?? 0}-${losses ?? 0}`;
+  return absences && absences > 0 ? `${base}-${absences}` : base;
 }
 
 export function enrichTorikumiWithRikishi(

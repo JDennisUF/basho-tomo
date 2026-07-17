@@ -19,7 +19,7 @@ export function VerticalName({
         }`}
       >
         <span
-          className={`block truncate pb-1 text-[26px] leading-[1.18] sm:text-[32px] ${
+          className={`block truncate pb-0.5 text-[23px] leading-[1.12] sm:text-[28px] ${
             emphasized ? "text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
           }`}
           title={secondary}

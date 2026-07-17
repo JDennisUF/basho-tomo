@@ -69,6 +69,44 @@ export type TorikumiResponse = {
   matches: TorikumiMatch[];
 };
 
+export type HeadToHeadMatch = {
+  bashoId: string;
+  division: Division;
+  day?: number;
+  matchNo?: number;
+  eastId?: number;
+  eastShikona?: string;
+  eastRank?: string;
+  westId?: number;
+  westShikona?: string;
+  westRank?: string;
+  kimarite?: string;
+  winnerId?: number;
+  winnerEn?: string;
+  winnerJp?: string;
+};
+
+export type HeadToHeadResponse = {
+  kimariteLosses: Record<string, number>;
+  kimariteWins: Record<string, number>;
+  matches: HeadToHeadMatch[];
+  opponentWins: number;
+  rikishiWins: number;
+  total: number;
+};
+
+export type CurrentBashoRecord = {
+  rikishiId: number;
+  shikona: string;
+  shikonaEn?: string;
+  rank?: string;
+  rankValue?: number;
+  division: Division;
+  wins?: number;
+  losses?: number;
+  absences?: number;
+};
+
 export type CachedPayload<T> = {
   version: string;
   savedAt: string;

@@ -24,12 +24,14 @@ import {
   listRecentBashoIds,
 } from "@/lib/sumo-api";
 import {
+  CurrentBashoRecord,
   BashoSummary,
   BanzukeResponse,
   Division,
   RikishiSummary,
   TorikumiResponse,
 } from "@/lib/types";
+import { formatRecordLabel, getDisplayShikona } from "@/lib/sumo-api";
 
 const DIVISIONS: Division[] = [
   "Makuuchi",
@@ -39,11 +41,12 @@ const DIVISIONS: Division[] = [
   "Jonidan",
   "Jonokuchi",
 ];
-const STABLE_VERSION = "v2-banzuke-cache";
+const STABLE_VERSION = "v3-banzuke-cache-live-records";
 const BASHO_SUMMARY_VERSION = "v2-basho-summary-cache";
 const TORIKUMI_VERSION = "v6-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
+const CURRENT_BANZUKE_MAX_AGE_MS = 1000 * 60 * 10;
 
 function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
   return {
@@ -148,35 +151,29 @@ function HydratedAppShell() {
 
     async function loadStableData() {
       const currentBashoId = getCurrentBashoId();
+      const isCurrentBasho = bashoId === currentBashoId;
       const cachedBasho =
-        bashoId === currentBashoId
+        isCurrentBasho
           ? readTimedCache<BashoSummary>(
               `basho:${bashoId}`,
               BASHO_SUMMARY_VERSION,
               CURRENT_BASHO_SUMMARY_MAX_AGE_MS,
             )
           : readCache<BashoSummary>(`basho:${bashoId}`, BASHO_SUMMARY_VERSION);
-      const cachedMakuuchi = readCache<BanzukeResponse>(
-        `banzuke:${bashoId}:Makuuchi`,
-        STABLE_VERSION,
-      );
-      const cachedJuryo = readCache<BanzukeResponse>(`banzuke:${bashoId}:Juryo`, STABLE_VERSION);
-      const cachedMakushita = readCache<BanzukeResponse>(
-        `banzuke:${bashoId}:Makushita`,
-        STABLE_VERSION,
-      );
-      const cachedSandanme = readCache<BanzukeResponse>(
-        `banzuke:${bashoId}:Sandanme`,
-        STABLE_VERSION,
-      );
-      const cachedJonidan = readCache<BanzukeResponse>(
-        `banzuke:${bashoId}:Jonidan`,
-        STABLE_VERSION,
-      );
-      const cachedJonokuchi = readCache<BanzukeResponse>(
-        `banzuke:${bashoId}:Jonokuchi`,
-        STABLE_VERSION,
-      );
+      const readBanzukeCache = (division: Division) =>
+        isCurrentBasho
+          ? readTimedCache<BanzukeResponse>(
+              `banzuke:${bashoId}:${division}`,
+              STABLE_VERSION,
+              CURRENT_BANZUKE_MAX_AGE_MS,
+            )
+          : readCache<BanzukeResponse>(`banzuke:${bashoId}:${division}`, STABLE_VERSION);
+      const cachedMakuuchi = readBanzukeCache("Makuuchi");
+      const cachedJuryo = readBanzukeCache("Juryo");
+      const cachedMakushita = readBanzukeCache("Makushita");
+      const cachedSandanme = readBanzukeCache("Sandanme");
+      const cachedJonidan = readBanzukeCache("Jonidan");
+      const cachedJonokuchi = readBanzukeCache("Jonokuchi");
       const cachedRikishi = readCache<RikishiSummary[]>(`rikishi:${bashoId}`, STABLE_VERSION);
 
       if (
@@ -406,6 +403,74 @@ function HydratedAppShell() {
     } satisfies Record<Division, BanzukeResponse | null>),
     [banzukeMap, rikishi],
   );
+  const currentRecordMap = useMemo(() => {
+    const recordMap = new Map<number, CurrentBashoRecord>();
+
+    for (const response of Object.values(hydratedBanzukeMap)) {
+      if (!response) {
+        continue;
+      }
+
+      for (const record of response.records) {
+        for (const side of [record.west, record.east]) {
+          if (!side?.rikishiID) {
+            continue;
+          }
+
+          if (
+            side.wins === undefined &&
+            side.losses === undefined &&
+            side.absences === undefined
+          ) {
+            continue;
+          }
+
+          recordMap.set(side.rikishiID, {
+            rikishiId: side.rikishiID,
+            shikona: side.shikonaJp ?? side.shikonaEn ?? String(side.rikishiID),
+            shikonaEn: side.shikonaEn,
+            rank: side.rank,
+            rankValue: side.rankValue,
+            division: response.division,
+            wins: side.wins,
+            losses: side.losses,
+            absences: side.absences,
+          });
+        }
+      }
+    }
+
+    return Object.fromEntries(recordMap.entries());
+  }, [hydratedBanzukeMap]);
+  const topCurrentRecords = useMemo(
+    () =>
+      Object.values(currentRecordMap)
+        .sort((left, right) => {
+          const winDiff = (right.wins ?? 0) - (left.wins ?? 0);
+          if (winDiff !== 0) {
+            return winDiff;
+          }
+
+          const lossDiff = (left.losses ?? 0) - (right.losses ?? 0);
+          if (lossDiff !== 0) {
+            return lossDiff;
+          }
+
+          const absenceDiff = (left.absences ?? 0) - (right.absences ?? 0);
+          if (absenceDiff !== 0) {
+            return absenceDiff;
+          }
+
+          const divisionDiff = DIVISIONS.indexOf(left.division) - DIVISIONS.indexOf(right.division);
+          if (divisionDiff !== 0) {
+            return divisionDiff;
+          }
+
+          return (left.rankValue ?? Number.MAX_SAFE_INTEGER) - (right.rankValue ?? Number.MAX_SAFE_INTEGER);
+        })
+        .slice(0, 5),
+    [currentRecordMap],
+  );
 
   function toggleFavorite(rikishiEntry: RikishiSummary) {
     setFavoriteIds((current) =>
@@ -413,10 +478,6 @@ function HydratedAppShell() {
         ? current.filter((id) => id !== rikishiEntry.id)
         : [...current, rikishiEntry.id],
     );
-  }
-
-  function toggleFavoriteById(id: number) {
-    setFavoriteIds((current) => current.filter((entry) => entry !== id));
   }
 
   function refreshTorikumiNow() {
@@ -578,6 +639,9 @@ function HydratedAppShell() {
               isLoading={isLoadingTorikumi}
               error={torikumiError}
               nameMode={torikumiNameMode}
+              favoriteIds={favoriteIds}
+              currentRecordMap={currentRecordMap}
+              onToggleFavorite={toggleFavorite}
               onRefresh={refreshTorikumiNow}
             />
             <BanzukePanel
@@ -618,10 +682,69 @@ function HydratedAppShell() {
               </dl>
             </section>
 
+            <section className="section-frame p-5 sm:p-6">
+              <div className="section-accent" />
+              <div className="border-b border-[color:var(--line)] pb-4">
+                <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Best current tournament records">
+                  星取上位
+                </div>
+                <h2 className="mt-2 text-3xl">勝ち星五傑</h2>
+              </div>
+              {topCurrentRecords.length === 0 ? (
+                <p className="mt-4 text-sm text-[color:var(--ink-soft)]" title="No current records available.">
+                  記録なし
+                </p>
+              ) : (
+                <ol className="mt-4 space-y-3">
+                  {topCurrentRecords.map((entry, index) => {
+                    const displayName =
+                      torikumiNameMode === "en"
+                        ? entry.shikonaEn ?? getDisplayShikona(entry.shikona)
+                        : getDisplayShikona(entry.shikona) || entry.shikonaEn || String(entry.rikishiId);
+
+                    return (
+                      <li
+                        key={entry.rikishiId}
+                        className="flex items-start justify-between gap-3 border-b border-[color:var(--line)] pb-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-baseline gap-3">
+                            <span
+                              className="data-sans text-sm text-[color:var(--ink-soft)]"
+                              title={`Rank in top records: ${index + 1}`}
+                            >
+                              {index + 1}
+                            </span>
+                            <span className="truncate text-xl" title={entry.shikonaEn ?? "English shikona unavailable"}>
+                              {displayName}
+                            </span>
+                          </div>
+                          <div
+                            className="data-sans mt-1 text-[14px] text-[color:var(--ink-soft)]"
+                            title="Division and rank"
+                          >
+                            {getDivisionLabel(entry.division)} / {entry.rank ?? "番付未詳"}
+                          </div>
+                        </div>
+                        <div
+                          className="data-sans shrink-0 text-lg text-[color:var(--ink)]"
+                          title="Current tournament record"
+                        >
+                          {formatRecordLabel(entry.wins, entry.losses, entry.absences)}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </section>
+
             <FavoritesPanel
               favorites={favorites}
               favoriteIds={favoriteIds}
-              onToggle={toggleFavoriteById}
+              rikishiIndex={rikishi}
+              nameMode={torikumiNameMode}
+              onToggle={toggleFavorite}
             />
           </div>
         </div>

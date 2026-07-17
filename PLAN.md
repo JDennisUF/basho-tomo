@@ -219,7 +219,7 @@ Polish visual identity, responsive behavior, loading states, and deployment.
 - [x] Add Tailwind and establish custom theme tokens
 - [x] Define visual system: colors, type, borders, spacing, textures
 - [x] Build base layout and navigation
-- [ ] Create current basho resolver strategy
+- [x] Create current basho resolver strategy
 - [x] Implement Sumo API client utilities
 - [x] Build current basho home page
 - [x] Build torikumi day/division browser
@@ -227,9 +227,9 @@ Polish visual identity, responsive behavior, loading states, and deployment.
 - [ ] Build rikishi search/browse flow
 - [ ] Build rikishi detail page
 - [x] Add favorites with localStorage persistence
-- [ ] Add loading, empty, and error states
-- [ ] Tune mobile layout and typography
-- [ ] Validate direct browser access to Sumo API endpoints
+- [x] Add loading, empty, and error states
+- [x] Tune mobile layout and typography
+- [x] Validate direct browser access to Sumo API endpoints
 - [ ] Deploy static site
 - [ ] Review fit for future paid features without changing v1 architecture
 
@@ -237,3 +237,95 @@ Polish visual identity, responsive behavior, loading states, and deployment.
 
 - Do we want the initial home view to open on Makuuchi by default, or remember the last selected division?
 - How much texture is acceptable in the background before it starts competing with match readability?
+
+## Current Build State
+
+As of Friday, July 17, 2026, the app is materially beyond the original scaffold stage.
+
+Implemented:
+
+- static Next.js app with successful production build
+- Japanese-first torikumi UI with optional English shikona toggle
+- current basho/day handling using Japan time
+- all six divisions supported:
+  - Makuuchi
+  - Juryo
+  - Makushita
+  - Sandanme
+  - Jonidan
+  - Jonokuchi
+- banzuke loading and caching for all six divisions
+- torikumi loading with cache policy:
+  - past days immutable
+  - current day 10-minute TTL
+  - future day longer TTL
+- manual torikumi refresh button (`更新`) that bypasses cache
+- global rikishi index loaded from `/api/rikishis?limit=...&skip=...`
+- torikumi and banzuke name enrichment by rikishi ID from cached rikishi index
+- Japanese shikona display cleaned up for compact use:
+  - only ring name shown
+  - given-name suffix removed
+  - parenthetical reading removed
+- favorites persisted in localStorage as ID list
+- basic favorites panel on the right side
+
+Working assumptions now reflected in code:
+
+- `/api/rikishis` is the authoritative source for Japanese shikona
+- torikumi display should not rely on English fallback for primary shikona
+- compact shikona display should strip extra name parts for scanability
+
+## Favorite Rikishi Feature Status
+
+This feature is only partially done.
+
+Currently implemented:
+
+- `favoriteIds` stored in localStorage
+- favorites can be added/removed from banzuke rows
+- favorites appear in the right-side panel
+
+Not yet implemented:
+
+- favorite bout highlighting in torikumi
+- searchable favorites management dialog
+- direct low-clutter add/remove affordance from torikumi rows
+- richer favorite workflow tied to full rikishi index
+
+## Useful Context For Resuming Favorites Work
+
+When resuming the favorite rikishi feature, these facts matter:
+
+1. Current favorite storage model:
+   - `favoriteIds` is a local array of rikishi IDs in `app-shell.tsx`
+   - persistence uses `readPreference` / `writePreference`
+
+2. Current data sources:
+   - full global rikishi index comes from `/api/rikishis`
+   - basho-specific rikishi list comes from banzuke extraction
+   - torikumi rows already carry `east.rikishiId` / `west.rikishiId`
+
+3. Best next implementation path:
+   - highlight torikumi rows when either side ID is in `favoriteIds`
+   - add a modal/dialog fed by `rikishiIndex`
+   - search should match Japanese shikona and English shikona
+   - torikumi add/remove control should be compact, likely an icon/button near row edge or in a hover affordance
+
+4. Constraint from user:
+   - do not clutter the torikumi UI
+   - favorites management should be easy, but restrained
+
+5. Good files to start from:
+   - `src/components/app-shell.tsx`
+   - `src/components/torikumi-board.tsx`
+   - `src/components/favorites-panel.tsx`
+   - `src/lib/sumo-api.ts`
+
+## Recommended Next Steps
+
+When picking this back up, do the favorites feature in this order:
+
+1. Add favorite bout highlighting in torikumi
+2. Add a searchable favorites dialog using `rikishiIndex`
+3. Add direct torikumi add/remove control with minimal visual weight
+4. Optionally expand favorites panel into a better management entry point
