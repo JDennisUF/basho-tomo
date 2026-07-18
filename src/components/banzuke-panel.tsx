@@ -87,7 +87,7 @@ export function BanzukePanel({
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div
-                  className="truncate text-[20px] leading-[1.12] sm:text-[24px]"
+                  className="truncate pb-1 text-[20px] leading-[1.28] sm:text-[24px]"
                   title={
                     nameMode === "jp"
                       ? record.west?.shikonaEn ?? "English shikona unavailable"
@@ -138,7 +138,7 @@ export function BanzukePanel({
               ) : null}
               <div className="min-w-0">
                 <div
-                  className="truncate text-[20px] leading-[1.12] sm:text-[24px]"
+                  className="truncate pb-1 text-[20px] leading-[1.28] sm:text-[24px]"
                   title={
                     nameMode === "jp"
                       ? record.east?.shikonaEn ?? "English shikona unavailable"

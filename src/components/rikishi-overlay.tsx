@@ -71,7 +71,7 @@ function getOpponentResultClass(result?: string, kinboshi = false) {
     case "win":
       return "border-[color:var(--ink)] bg-white text-transparent";
     case "loss":
-      return "border-[color:var(--ink)] bg-[color:var(--ink)] text-transparent";
+      return "border-[color:var(--ink)] bg-[color:var(--loss-mark)] text-transparent";
     case "absent":
       return "border-[color:var(--line-strong)] bg-transparent text-[color:var(--ink-soft)]";
     default:

@@ -86,7 +86,7 @@ function WinnerMark({
       className={`${slotClass} rounded-full border ${
         active
           ? "border-[color:var(--ink)] bg-white"
-          : "border-[color:var(--ink)] bg-[color:var(--ink)]"
+          : "border-[color:var(--ink)] bg-[color:var(--loss-mark)]"
       }`}
       title={active ? "Winner: white circle" : "Loser: black circle"}
     />

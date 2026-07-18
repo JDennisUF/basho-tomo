@@ -1,4 +1,20 @@
-export type ThemeId = "washi" | "tatami" | "urushi" | "sakura" | "fuji" | "ai" | "sumi";
+export type ThemeId =
+  | "washi"
+  | "tatami"
+  | "urushi"
+  | "sakura"
+  | "fuji"
+  | "ai"
+  | "sumi"
+  | "dohyo"
+  | "momiji"
+  | "yuki"
+  | "kinaka"
+  | "shuin"
+  | "bugu"
+  | "jinmaku"
+  | "kachiiro"
+  | "shuUrushi";
 
 export type ThemeDefinition = {
   id: ThemeId;
@@ -51,6 +67,60 @@ export const THEMES: ThemeDefinition[] = [
     label: "墨",
     description: "Ink Wash",
     swatches: ["#ded9cf", "#2f3130", "#a33c34"],
+  },
+  {
+    id: "dohyo",
+    label: "土俵",
+    description: "Dohyo Clay",
+    swatches: ["#d7b184", "#7d4d2f", "#c7a34e"],
+  },
+  {
+    id: "momiji",
+    label: "紅葉",
+    description: "Autumn Maple",
+    swatches: ["#efe0c9", "#a6402d", "#b8792c"],
+  },
+  {
+    id: "yuki",
+    label: "雪",
+    description: "Winter Snow",
+    swatches: ["#edf1f2", "#4f6f8f", "#2f3438"],
+  },
+  {
+    id: "kinaka",
+    label: "金赤",
+    description: "Gold Red",
+    swatches: ["#2a1712", "#c83324", "#d7ad45"],
+  },
+  {
+    id: "shuin",
+    label: "朱印",
+    description: "Vermilion Seal",
+    swatches: ["#f2dfc7", "#c43b2f", "#201716"],
+  },
+  {
+    id: "bugu",
+    label: "武具",
+    description: "Armor Brass",
+    swatches: ["#1d2228", "#9f3f35", "#b59655"],
+  },
+  {
+    id: "jinmaku",
+    label: "陣幕",
+    description: "Camp Curtain",
+    swatches: ["#f4efe4", "#181716", "#b92f28"],
+  },
+  {
+    id: "kachiiro",
+    label: "勝色",
+    description: "Victory Indigo",
+    swatches: ["#101b2e", "#1f4f8a", "#d6b86a"],
+  },
+  {
+    id: "shuUrushi",
+    label: "朱漆",
+    description: "Red Lacquer",
+    swatches: ["#260d0b", "#c93a2d", "#d2a24b"],
   },
 ];
 

@@ -16,8 +16,8 @@ export function VerticalName({
   return (
     <div className={`min-w-0 w-full ${reverse ? "text-right" : "text-left"}`}>
       <span
-        className={`block truncate whitespace-nowrap pb-0.5 leading-[1.12] ${
-          isLatinName ? "text-[19px] sm:text-[22px]" : "text-[20px] sm:text-[24px]"
+        className={`block truncate whitespace-nowrap pb-1 leading-[1.28] ${
+          isLatinName ? "text-[18px] sm:text-[21px]" : "text-[20px] sm:text-[24px]"
         } ${
           emphasized ? "text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
         } ${reverse ? "text-right" : "text-left"}`}

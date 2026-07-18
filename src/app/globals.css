@@ -7,6 +7,7 @@
   --panel-strong: rgba(246, 238, 226, 0.94);
   --ink: #211915;
   --ink-soft: #5a4d43;
+  --loss-mark: #15110f;
   --line: rgba(63, 43, 29, 0.18);
   --line-strong: rgba(63, 43, 29, 0.3);
   --accent: #9a3c31;
@@ -26,6 +27,7 @@
       transparent 11px,
       rgba(92, 72, 51, 0.02) 12px
     );
+  --body-texture-size: auto;
   --selection: rgba(154, 60, 49, 0.18);
   --section-inner-line: rgba(63, 43, 29, 0.08);
   --panel-top-highlight: rgba(154, 60, 49, 0.08);
@@ -57,6 +59,7 @@ html[data-theme="washi"] {
       transparent 11px,
       rgba(92, 72, 51, 0.02) 12px
     );
+  --body-texture-size: auto;
   --selection: rgba(154, 60, 49, 0.18);
   --section-inner-line: rgba(63, 43, 29, 0.08);
   --panel-top-highlight: rgba(154, 60, 49, 0.08);
@@ -94,6 +97,7 @@ html[data-theme="tatami"] {
       transparent 15px,
       rgba(144, 123, 69, 0.03) 16px
     );
+  --body-texture-size: auto;
   --selection: rgba(111, 127, 79, 0.22);
   --section-inner-line: rgba(58, 70, 42, 0.1);
   --panel-top-highlight: rgba(162, 106, 42, 0.12);
@@ -125,6 +129,7 @@ html[data-theme="urushi"] {
       transparent 13px,
       rgba(200, 162, 85, 0.025) 14px
     );
+  --body-texture-size: auto;
   --selection: rgba(200, 162, 85, 0.24);
   --section-inner-line: rgba(214, 190, 160, 0.08);
   --panel-top-highlight: rgba(200, 162, 85, 0.1);
@@ -149,9 +154,10 @@ html[data-theme="sakura"] {
     radial-gradient(ellipse at 82% 0%, rgba(159, 123, 69, 0.08), transparent 28%),
     var(--bg);
   --body-texture:
-    linear-gradient(rgba(92, 49, 62, 0.018), rgba(92, 49, 62, 0.018)),
-    radial-gradient(ellipse at 18px 14px, rgba(169, 72, 99, 0.055) 0 2px, transparent 3px),
-    radial-gradient(ellipse at 70px 52px, rgba(169, 72, 99, 0.04) 0 2px, transparent 3px);
+    radial-gradient(ellipse 9px 5px at 22px 18px, rgba(169, 72, 99, 0.14), transparent 70%),
+    radial-gradient(ellipse 7px 4px at 92px 58px, rgba(169, 72, 99, 0.1), transparent 70%),
+    linear-gradient(rgba(92, 49, 62, 0.025), rgba(92, 49, 62, 0.025));
+  --body-texture-size: 128px 96px, 128px 96px, auto;
   --selection: rgba(169, 72, 99, 0.2);
   --section-inner-line: rgba(92, 49, 62, 0.08);
   --panel-top-highlight: rgba(169, 72, 99, 0.09);
@@ -176,14 +182,16 @@ html[data-theme="fuji"] {
     radial-gradient(circle at top right, rgba(111, 127, 98, 0.1), transparent 24%),
     var(--bg);
   --body-texture:
-    linear-gradient(rgba(65, 47, 82, 0.016), rgba(65, 47, 82, 0.016)),
+    radial-gradient(ellipse 4px 10px at 24px 18px, rgba(116, 82, 141, 0.1), transparent 72%),
+    radial-gradient(ellipse 4px 10px at 56px 42px, rgba(116, 82, 141, 0.075), transparent 72%),
     repeating-linear-gradient(
       90deg,
       transparent 0,
-      transparent 42px,
-      rgba(116, 82, 141, 0.04) 43px,
-      transparent 46px
+      transparent 36px,
+      rgba(116, 82, 141, 0.085) 37px,
+      transparent 41px
     );
+  --body-texture-size: 96px 120px, 96px 120px, auto;
   --selection: rgba(116, 82, 141, 0.22);
   --section-inner-line: rgba(65, 47, 82, 0.08);
   --panel-top-highlight: rgba(116, 82, 141, 0.09);
@@ -208,19 +216,21 @@ html[data-theme="ai"] {
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 22%),
     var(--bg);
   --body-texture:
-    linear-gradient(rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.012)),
     repeating-linear-gradient(
       90deg,
       transparent 0,
-      transparent 13px,
-      rgba(240, 234, 220, 0.025) 14px
+      transparent 11px,
+      rgba(240, 234, 220, 0.055) 12px,
+      transparent 13px
     ),
     repeating-linear-gradient(
       0deg,
       transparent 0,
-      transparent 13px,
-      rgba(240, 234, 220, 0.02) 14px
+      transparent 11px,
+      rgba(240, 234, 220, 0.045) 12px,
+      transparent 13px
     );
+  --body-texture-size: auto;
   --selection: rgba(214, 181, 109, 0.26);
   --section-inner-line: rgba(240, 234, 220, 0.08);
   --panel-top-highlight: rgba(214, 181, 109, 0.1);
@@ -245,17 +255,315 @@ html[data-theme="sumi"] {
     linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 24%),
     var(--bg);
   --body-texture:
-    linear-gradient(rgba(32, 34, 33, 0.018), rgba(32, 34, 33, 0.018)),
-    radial-gradient(ellipse at 20% 18%, rgba(32, 34, 33, 0.045), transparent 18%),
+    radial-gradient(ellipse at 22% 20%, rgba(32, 34, 33, 0.075), transparent 22%),
+    radial-gradient(ellipse at 78% 58%, rgba(32, 34, 33, 0.045), transparent 18%),
     repeating-linear-gradient(
       0deg,
       transparent 0,
       transparent 17px,
-      rgba(32, 34, 33, 0.018) 18px
+      rgba(32, 34, 33, 0.035) 18px
     );
+  --body-texture-size: 360px 260px, 420px 300px, auto;
   --selection: rgba(163, 60, 52, 0.2);
   --section-inner-line: rgba(40, 42, 41, 0.08);
   --panel-top-highlight: rgba(163, 60, 52, 0.08);
+}
+
+html[data-theme="dohyo"] {
+  --bg: #d7b184;
+  --bg-soft: #c89b69;
+  --panel: rgba(230, 199, 157, 0.86);
+  --panel-strong: rgba(221, 184, 136, 0.95);
+  --ink: #2a1d16;
+  --ink-soft: #654b3b;
+  --line: rgba(80, 48, 30, 0.18);
+  --line-strong: rgba(80, 48, 30, 0.31);
+  --accent: #7d4d2f;
+  --accent-deep: #603822;
+  --accent-soft: rgba(125, 77, 47, 0.16);
+  --gold: #c7a34e;
+  --shadow: rgba(62, 36, 20, 0.1);
+  --page-bg:
+    radial-gradient(circle at top, rgba(199, 163, 78, 0.14), transparent 27%),
+    linear-gradient(180deg, rgba(255, 245, 224, 0.3), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(circle at 24px 18px, rgba(80, 48, 30, 0.1) 0 1px, transparent 2px),
+    radial-gradient(circle at 86px 54px, rgba(80, 48, 30, 0.08) 0 1px, transparent 2px),
+    repeating-linear-gradient(
+      35deg,
+      transparent 0,
+      transparent 28px,
+      rgba(199, 163, 78, 0.075) 29px,
+      transparent 32px
+    );
+  --body-texture-size: 120px 90px, 120px 90px, auto;
+  --selection: rgba(125, 77, 47, 0.22);
+  --section-inner-line: rgba(80, 48, 30, 0.09);
+  --panel-top-highlight: rgba(199, 163, 78, 0.12);
+}
+
+html[data-theme="momiji"] {
+  --bg: #efe0c9;
+  --bg-soft: #dec9aa;
+  --panel: rgba(246, 231, 210, 0.86);
+  --panel-strong: rgba(239, 222, 197, 0.95);
+  --ink: #281b16;
+  --ink-soft: #604c40;
+  --line: rgba(88, 46, 31, 0.18);
+  --line-strong: rgba(88, 46, 31, 0.3);
+  --accent: #a6402d;
+  --accent-deep: #813123;
+  --accent-soft: rgba(166, 64, 45, 0.15);
+  --gold: #b8792c;
+  --shadow: rgba(70, 36, 21, 0.09);
+  --page-bg:
+    radial-gradient(ellipse at 18% 8%, rgba(166, 64, 45, 0.13), transparent 25%),
+    radial-gradient(circle at top right, rgba(184, 121, 44, 0.12), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(ellipse 8px 14px at 24px 18px, rgba(166, 64, 45, 0.13), transparent 70%),
+    radial-gradient(ellipse 6px 12px at 78px 62px, rgba(184, 121, 44, 0.1), transparent 70%),
+    linear-gradient(rgba(88, 46, 31, 0.02), rgba(88, 46, 31, 0.02));
+  --body-texture-size: 118px 98px, 118px 98px, auto;
+  --selection: rgba(166, 64, 45, 0.21);
+  --section-inner-line: rgba(88, 46, 31, 0.08);
+  --panel-top-highlight: rgba(184, 121, 44, 0.11);
+}
+
+html[data-theme="yuki"] {
+  --bg: #edf1f2;
+  --bg-soft: #d8e0e4;
+  --panel: rgba(247, 249, 249, 0.87);
+  --panel-strong: rgba(238, 243, 245, 0.95);
+  --ink: #20262b;
+  --ink-soft: #56636b;
+  --line: rgba(47, 66, 80, 0.16);
+  --line-strong: rgba(47, 66, 80, 0.28);
+  --accent: #4f6f8f;
+  --accent-deep: #3d5872;
+  --accent-soft: rgba(79, 111, 143, 0.15);
+  --gold: #8a7a5d;
+  --shadow: rgba(39, 52, 62, 0.08);
+  --page-bg:
+    radial-gradient(circle at top, rgba(79, 111, 143, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(circle at 18px 20px, rgba(79, 111, 143, 0.11) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 82px 54px, rgba(79, 111, 143, 0.075) 0 1.5px, transparent 2.5px),
+    linear-gradient(rgba(47, 66, 80, 0.018), rgba(47, 66, 80, 0.018));
+  --body-texture-size: 110px 92px, 110px 92px, auto;
+  --selection: rgba(79, 111, 143, 0.21);
+  --section-inner-line: rgba(47, 66, 80, 0.08);
+  --panel-top-highlight: rgba(79, 111, 143, 0.09);
+}
+
+html[data-theme="kinaka"] {
+  --bg: #2a1712;
+  --bg-soft: #3a2019;
+  --panel: rgba(55, 29, 22, 0.87);
+  --panel-strong: rgba(64, 34, 26, 0.95);
+  --ink: #f8ead3;
+  --ink-soft: #d6c2a7;
+  --line: rgba(248, 234, 211, 0.16);
+  --line-strong: rgba(248, 234, 211, 0.28);
+  --accent: #c83324;
+  --accent-deep: #e24a38;
+  --accent-soft: rgba(200, 51, 36, 0.2);
+  --gold: #d7ad45;
+  --shadow: rgba(5, 2, 1, 0.32);
+  --page-bg:
+    radial-gradient(circle at top, rgba(215, 173, 69, 0.15), transparent 27%),
+    linear-gradient(180deg, rgba(200, 51, 36, 0.08), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(circle at 20px 18px, rgba(215, 173, 69, 0.09) 0 2px, transparent 3px),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 24px,
+      rgba(200, 51, 36, 0.09) 25px,
+      transparent 29px
+    );
+  --body-texture-size: 96px 84px, auto;
+  --selection: rgba(215, 173, 69, 0.28);
+  --section-inner-line: rgba(248, 234, 211, 0.08);
+  --panel-top-highlight: rgba(215, 173, 69, 0.12);
+}
+
+html[data-theme="shuin"] {
+  --bg: #f2dfc7;
+  --bg-soft: #dfc39f;
+  --panel: rgba(249, 230, 206, 0.87);
+  --panel-strong: rgba(242, 218, 188, 0.96);
+  --ink: #201716;
+  --ink-soft: #5d4740;
+  --line: rgba(76, 36, 30, 0.18);
+  --line-strong: rgba(76, 36, 30, 0.3);
+  --accent: #c43b2f;
+  --accent-deep: #9d2e25;
+  --accent-soft: rgba(196, 59, 47, 0.16);
+  --gold: #9d773c;
+  --shadow: rgba(69, 34, 24, 0.1);
+  --page-bg:
+    radial-gradient(ellipse at 84% 10%, rgba(196, 59, 47, 0.16), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(circle at 28px 26px, rgba(196, 59, 47, 0.12) 0 10px, transparent 11px),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 15px,
+      rgba(76, 36, 30, 0.03) 16px
+    );
+  --body-texture-size: 150px 120px, auto;
+  --selection: rgba(196, 59, 47, 0.22);
+  --section-inner-line: rgba(76, 36, 30, 0.08);
+  --panel-top-highlight: rgba(196, 59, 47, 0.1);
+}
+
+html[data-theme="bugu"] {
+  --bg: #1d2228;
+  --bg-soft: #29313a;
+  --panel: rgba(37, 43, 50, 0.88);
+  --panel-strong: rgba(44, 51, 59, 0.95);
+  --ink: #efe2ca;
+  --ink-soft: #c8bba5;
+  --line: rgba(239, 226, 202, 0.15);
+  --line-strong: rgba(239, 226, 202, 0.27);
+  --accent: #9f3f35;
+  --accent-deep: #c05245;
+  --accent-soft: rgba(159, 63, 53, 0.19);
+  --gold: #b59655;
+  --shadow: rgba(3, 4, 6, 0.3);
+  --page-bg:
+    radial-gradient(circle at top left, rgba(181, 150, 85, 0.13), transparent 27%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%),
+    var(--bg);
+  --body-texture:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 30px,
+      rgba(181, 150, 85, 0.06) 31px,
+      transparent 33px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 30px,
+      rgba(239, 226, 202, 0.025) 31px,
+      transparent 33px
+    );
+  --body-texture-size: auto;
+  --selection: rgba(181, 150, 85, 0.25);
+  --section-inner-line: rgba(239, 226, 202, 0.08);
+  --panel-top-highlight: rgba(181, 150, 85, 0.1);
+}
+
+html[data-theme="jinmaku"] {
+  --bg: #f4efe4;
+  --bg-soft: #ded5c7;
+  --panel: rgba(250, 246, 237, 0.88);
+  --panel-strong: rgba(244, 239, 228, 0.96);
+  --ink: #181716;
+  --ink-soft: #5a554d;
+  --line: rgba(24, 23, 22, 0.18);
+  --line-strong: rgba(24, 23, 22, 0.31);
+  --accent: #b92f28;
+  --accent-deep: #8f231f;
+  --accent-soft: rgba(185, 47, 40, 0.15);
+  --gold: #a98035;
+  --shadow: rgba(32, 27, 21, 0.09);
+  --page-bg:
+    linear-gradient(90deg, rgba(24, 23, 22, 0.08), transparent 12%, transparent 88%, rgba(185, 47, 40, 0.1)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 24%),
+    var(--bg);
+  --body-texture:
+    repeating-linear-gradient(
+      90deg,
+      rgba(24, 23, 22, 0.075) 0,
+      rgba(24, 23, 22, 0.075) 12px,
+      transparent 12px,
+      transparent 74px,
+      rgba(185, 47, 40, 0.08) 74px,
+      rgba(185, 47, 40, 0.08) 86px,
+      transparent 86px,
+      transparent 148px
+    );
+  --body-texture-size: auto;
+  --selection: rgba(185, 47, 40, 0.21);
+  --section-inner-line: rgba(24, 23, 22, 0.08);
+  --panel-top-highlight: rgba(185, 47, 40, 0.08);
+}
+
+html[data-theme="kachiiro"] {
+  --bg: #101b2e;
+  --bg-soft: #152947;
+  --panel: rgba(20, 35, 58, 0.88);
+  --panel-strong: rgba(24, 43, 70, 0.95);
+  --ink: #efe8d5;
+  --ink-soft: #c4bdad;
+  --line: rgba(239, 232, 213, 0.15);
+  --line-strong: rgba(239, 232, 213, 0.27);
+  --accent: #1f4f8a;
+  --accent-deep: #4778b5;
+  --accent-soft: rgba(71, 120, 181, 0.18);
+  --gold: #d6b86a;
+  --shadow: rgba(2, 5, 11, 0.32);
+  --page-bg:
+    radial-gradient(circle at top, rgba(214, 184, 106, 0.13), transparent 27%),
+    linear-gradient(180deg, rgba(71, 120, 181, 0.09), transparent 24%),
+    var(--bg);
+  --body-texture:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0,
+      transparent 18px,
+      rgba(239, 232, 213, 0.035) 19px,
+      transparent 21px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0,
+      transparent 32px,
+      rgba(214, 184, 106, 0.045) 33px,
+      transparent 36px
+    );
+  --body-texture-size: auto;
+  --selection: rgba(214, 184, 106, 0.26);
+  --section-inner-line: rgba(239, 232, 213, 0.08);
+  --panel-top-highlight: rgba(214, 184, 106, 0.1);
+}
+
+html[data-theme="shuUrushi"] {
+  --bg: #260d0b;
+  --bg-soft: #3a130f;
+  --panel: rgba(61, 18, 14, 0.88);
+  --panel-strong: rgba(73, 21, 16, 0.95);
+  --ink: #f5e4cf;
+  --ink-soft: #d1bda2;
+  --line: rgba(245, 228, 207, 0.15);
+  --line-strong: rgba(245, 228, 207, 0.27);
+  --accent: #c93a2d;
+  --accent-deep: #e05242;
+  --accent-soft: rgba(201, 58, 45, 0.2);
+  --gold: #d2a24b;
+  --shadow: rgba(6, 1, 1, 0.34);
+  --page-bg:
+    radial-gradient(ellipse at 70% 0%, rgba(210, 162, 75, 0.14), transparent 27%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 24%),
+    var(--bg);
+  --body-texture:
+    radial-gradient(ellipse at 24% 18%, rgba(255, 255, 255, 0.055), transparent 18%),
+    radial-gradient(ellipse at 76% 62%, rgba(210, 162, 75, 0.06), transparent 20%),
+    linear-gradient(rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.012));
+  --body-texture-size: 420px 260px, 360px 240px, auto;
+  --selection: rgba(210, 162, 75, 0.27);
+  --section-inner-line: rgba(245, 228, 207, 0.08);
+  --panel-top-highlight: rgba(210, 162, 75, 0.11);
 }
 
 * {
@@ -273,6 +581,7 @@ body {
   font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", Georgia, serif;
   color: var(--ink);
   background: var(--body-texture);
+  background-size: var(--body-texture-size);
 }
 
 a {
