@@ -114,6 +114,7 @@ function HydratedAppShell() {
   const [showResults, setShowResults] = useState<boolean>(() =>
     readPreference<boolean>("show-results", true),
   );
+  const [showSettings, setShowSettings] = useState(false);
   const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
   const [torikumiError, setTorikumiError] = useState<string | null>(null);
@@ -523,6 +524,7 @@ function HydratedAppShell() {
   }
 
   const recentBashoIds = listRecentBashoIds(getCurrentBashoId(), 24);
+  const selectedTheme = THEMES.find((item) => item.id === theme) ?? THEMES[0];
 
   return (
     <main className="mx-auto min-h-screen max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -530,57 +532,10 @@ function HydratedAppShell() {
         <header className="border-b border-[color:var(--line)] px-5 py-6 sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div
-                className="fine-label hover-hint text-base text-[color:var(--ink-soft)]"
-                title="Current grand sumo basho"
-              >
-                本場所案内
-              </div>
-              <h1 className="mt-2 text-4xl sm:text-5xl">{getBashoLabel(bashoId)}</h1>
-              <p className="data-sans mt-2 max-w-2xl text-base leading-6 text-[color:var(--ink-soft)]">
-                本日の取組を中心に、幕内と十両を静かに追うための場。
-              </p>
+              <h1 className="text-5xl sm:text-7xl" title="Basho Tomo">場所友</h1>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-6">
-              <label className="flex flex-col gap-2 sm:col-span-2">
-                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Theme">
-                  意匠
-                </span>
-                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
-                  {THEMES.map((item) => {
-                    const active = theme === item.id;
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setTheme(item.id)}
-                        className={`flex min-h-16 flex-col items-start justify-center gap-2 rounded-[6px] px-2 py-2 text-left transition ${
-                          active
-                            ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                            : "text-[color:var(--ink-soft)]"
-                        }`}
-                        title={item.description}
-                        aria-pressed={active}
-                      >
-                        <span className="flex items-center gap-1.5">
-                          {item.swatches.map((swatch) => (
-                            <span
-                              key={swatch}
-                              aria-hidden="true"
-                              className="h-3 w-3 rounded-full border border-black/10"
-                              style={{ backgroundColor: swatch }}
-                            />
-                          ))}
-                        </span>
-                        <span className="fine-label text-xs leading-none">{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </label>
-
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_4rem_minmax(0,1fr)_auto]">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -605,23 +560,17 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Division">
                   番付
                 </span>
-                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <select
+                  value={division}
+                  onChange={(event) => setDivision(event.target.value as Division)}
+                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
+                >
                   {DIVISIONS.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => setDivision(item)}
-                      className={`rounded-[6px] px-2 py-2 text-sm transition ${
-                        division === item
-                          ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                          : "text-[color:var(--ink-soft)]"
-                      }`}
-                      title={item}
-                    >
-                      {getDivisionLabel(item)}
-                    </button>
+                    <option key={item} value={item}>
+                      {getDivisionLabel(item)} {item}
+                    </option>
                   ))}
-                </div>
+                </select>
               </label>
 
               <label className="flex flex-col gap-2">
@@ -631,49 +580,14 @@ function HydratedAppShell() {
                 <select
                   value={day}
                   onChange={(event) => setDayOverride(Number(event.target.value))}
-                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
+                  className="w-16 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {Array.from({ length: 15 }, (_, index) => index + 1).map((value) => (
                     <option key={value} value={value}>
-                      {value}日目
+                      {value}
                     </option>
                   ))}
                 </select>
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span
-                  className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
-                  title="Torikumi shikona display"
-                >
-                  取組名
-                </span>
-                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
-                  <button
-                    type="button"
-                    onClick={() => setTorikumiNameMode("jp")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
-                      torikumiNameMode === "jp"
-                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                        : "text-[color:var(--ink-soft)]"
-                    }`}
-                    title="Japanese shikona"
-                  >
-                    日本語
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTorikumiNameMode("en")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
-                      torikumiNameMode === "en"
-                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                        : "text-[color:var(--ink-soft)]"
-                    }`}
-                    title="English shikona"
-                  >
-                    English
-                  </button>
-                </div>
               </label>
 
               <label className="flex flex-col gap-2">
@@ -710,6 +624,23 @@ function HydratedAppShell() {
                   </button>
                 </div>
               </label>
+
+              <div className="flex flex-col gap-2">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Settings">
+                  設定
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(true)}
+                  className="fine-label inline-flex h-[42px] w-[42px] items-center justify-center rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                  title="Open settings"
+                  aria-label="Open settings"
+                >
+                  <span aria-hidden="true" className="text-lg leading-none">
+                    ⚙
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -850,6 +781,7 @@ function HydratedAppShell() {
               rikishiIndex={rikishi}
               nameMode={torikumiNameMode}
               onToggle={toggleFavorite}
+              onSelect={setSelectedRikishiId}
             />
           </div>
         </div>
@@ -860,8 +792,94 @@ function HydratedAppShell() {
           record={selectedRikishiRecord}
           currentRecordMap={currentRecordMap}
           nameMode={torikumiNameMode}
+          showResults={showResults}
           onClose={() => setSelectedRikishiId(null)}
         />
+      ) : null}
+      {showSettings ? (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center bg-[rgba(33,25,21,0.52)] px-4 py-6 sm:items-center"
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="texture-panel w-full max-w-md overflow-hidden rounded-[8px]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="border-b border-[color:var(--line)] px-5 py-4 sm:px-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Settings">
+                    設定
+                  </div>
+                  <h2 className="mt-2 text-3xl">環境</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(false)}
+                  className="fine-label rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                  title="Close settings"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-5 px-5 py-5 sm:px-6">
+              <label className="flex flex-col gap-2">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Theme">
+                  意匠
+                </span>
+                <select
+                  value={theme}
+                  onChange={(event) => setTheme(event.target.value as ThemeId)}
+                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
+                  title={selectedTheme.description}
+                >
+                  {THEMES.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-2">
+                <span
+                  className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
+                  title="Torikumi shikona display"
+                >
+                  取組名
+                </span>
+                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTorikumiNameMode("jp")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      torikumiNameMode === "jp"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Japanese shikona"
+                  >
+                    日本語
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTorikumiNameMode("en")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      torikumiNameMode === "en"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="English shikona"
+                  >
+                    English
+                  </button>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
       ) : null}
     </main>
   );

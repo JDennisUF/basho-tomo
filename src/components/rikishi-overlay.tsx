@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CurrentBashoRecord, RikishiSummary } from "@/lib/types";
 import {
+  fetchRikishi,
   formatRecordLabel,
   getDisplayShikona,
   getDivisionLabel,
@@ -13,6 +15,7 @@ type RikishiOverlayProps = {
   record?: CurrentBashoRecord;
   currentRecordMap: Record<number, CurrentBashoRecord>;
   nameMode: "jp" | "en";
+  showResults: boolean;
   onClose: () => void;
 };
 
@@ -76,14 +79,101 @@ function getOpponentResultClass(result?: string, kinboshi = false) {
   }
 }
 
+function formatCentimeters(value?: number) {
+  return value === undefined ? "未詳" : `${value} cm`;
+}
+
+function formatKilograms(value?: number) {
+  return value === undefined ? "未詳" : `${value} kg`;
+}
+
+function formatDebut(value?: string) {
+  if (!value) {
+    return "未詳";
+  }
+
+  const match = value.match(/^(\d{4})(\d{2})$/);
+  if (!match) {
+    return value;
+  }
+
+  const [, year, month] = match;
+  return `${year}年${Number(month)}月場所`;
+}
+
+function calculateAge(birthDate?: string, now = new Date()) {
+  if (!birthDate) {
+    return undefined;
+  }
+
+  const birth = new Date(birthDate);
+  if (Number.isNaN(birth.getTime())) {
+    return undefined;
+  }
+
+  let age = now.getFullYear() - birth.getFullYear();
+  const hasHadBirthdayThisYear =
+    now.getMonth() > birth.getMonth() ||
+    (now.getMonth() === birth.getMonth() && now.getDate() >= birth.getDate());
+
+  if (!hasHadBirthdayThisYear) {
+    age -= 1;
+  }
+
+  return age;
+}
+
+function formatAge(birthDate?: string) {
+  const age = calculateAge(birthDate);
+  return age === undefined ? "未詳" : String(age);
+}
+
+function getJsaProfileUrl(nskId?: number) {
+  return nskId === undefined
+    ? undefined
+    : `https://sumo.or.jp/EnSumoDataRikishi/profile/${nskId}/`;
+}
+
+function getSumoDbProfileUrl(sumoDbId?: number) {
+  return sumoDbId === undefined
+    ? undefined
+    : `https://sumodb.sumogames.de/Rikishi.aspx?r=${sumoDbId}`;
+}
+
 export function RikishiOverlay({
   rikishi,
   record,
   currentRecordMap,
   nameMode,
+  showResults,
   onClose,
 }: RikishiOverlayProps) {
-  const displayName = getVisibleShikona(rikishi, nameMode);
+  const [detail, setDetail] = useState<RikishiSummary | null>(null);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    fetchRikishi(rikishi.id)
+      .then((response) => {
+        if (isCurrent) {
+          setDetail(response);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setDetail(null);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [rikishi.id]);
+
+  const rikishiDetail = detail?.id === rikishi.id ? { ...rikishi, ...detail } : rikishi;
+  const displayName = getVisibleShikona(rikishiDetail, nameMode);
+  const jsaProfileUrl = getJsaProfileUrl(rikishiDetail.nskId);
+  const sumoDbProfileUrl = getSumoDbProfileUrl(rikishiDetail.sumoDbId);
 
   return (
     <div
@@ -100,10 +190,36 @@ export function RikishiOverlay({
               <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Rikishi details">
                 力士詳細
               </div>
-              <h2 className="mt-2 text-3xl sm:text-4xl" title={rikishi.shikonaEn}>
-                {getDisplayShikona(rikishi.shikona) || displayName}
-                {rikishi.shikonaEn ? ` - ${rikishi.shikonaEn}` : ""}
+              <h2 className="mt-2 text-3xl sm:text-4xl" title={rikishiDetail.shikonaEn}>
+                {getDisplayShikona(rikishiDetail.shikona) || displayName}
+                {rikishiDetail.shikonaEn ? ` - ${rikishiDetail.shikonaEn}` : ""}
               </h2>
+              {jsaProfileUrl || sumoDbProfileUrl ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {jsaProfileUrl ? (
+                    <a
+                      href={jsaProfileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="fine-label inline-flex rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                      title="Open Japan Sumo Association rikishi profile"
+                    >
+                      協会プロフィール
+                    </a>
+                  ) : null}
+                  {sumoDbProfileUrl ? (
+                    <a
+                      href={sumoDbProfileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="fine-label inline-flex rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                      title="Open Sumo DB rikishi profile"
+                    >
+                      Sumo DB
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             <button
               type="button"
@@ -128,26 +244,62 @@ export function RikishiOverlay({
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Rank">
                     番付
                   </dt>
-                  <dd className="text-right text-lg">{record?.rank ?? rikishi.rank ?? "未詳"}</dd>
+                  <dd className="text-right text-lg">
+                    {record?.rank ?? rikishiDetail.currentRank ?? rikishiDetail.rank ?? "未詳"}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Division">
                     部屋別
                   </dt>
-                  <dd className="text-right text-lg">{getDivisionLabel(record?.division ?? rikishi.division)}</dd>
+                  <dd className="text-right text-lg">
+                    {getDivisionLabel(record?.division ?? rikishiDetail.division)}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Stable">
                     部屋
                   </dt>
-                  <dd className="text-right text-lg">{record?.heya ?? rikishi.heya ?? "未詳"}</dd>
+                  <dd className="text-right text-lg">{record?.heya ?? rikishiDetail.heya ?? "未詳"}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-lg text-[color:var(--ink-soft)]" title="Age">
+                    年齢
+                  </dt>
+                  <dd className="data-sans text-right text-lg">
+                    {formatAge(rikishiDetail.birthDate)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-lg text-[color:var(--ink-soft)]" title="Height">
+                    身長
+                  </dt>
+                  <dd className="data-sans text-right text-lg">
+                    {formatCentimeters(rikishiDetail.height)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-lg text-[color:var(--ink-soft)]" title="Weight">
+                    体重
+                  </dt>
+                  <dd className="data-sans text-right text-lg">
+                    {formatKilograms(rikishiDetail.weight)}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <dt className="text-lg text-[color:var(--ink-soft)]" title="Debut">
+                    初土俵
+                  </dt>
+                  <dd className="data-sans text-right text-lg">
+                    {formatDebut(rikishiDetail.debut)}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Current tournament record">
                     星取
                   </dt>
                   <dd className="data-sans text-right text-2xl">
-                    {record
+                    {showResults && record
                       ? formatRecordLabel(record.wins, record.losses, record.absences)
                       : "未詳"}
                   </dd>
@@ -170,7 +322,11 @@ export function RikishiOverlay({
                     const opponentRecord = opponent.opponentID
                       ? currentRecordMap[opponent.opponentID]
                       : undefined;
-                    const kinboshi = isKinboshiWin({
+                    const isCompleted = ["win", "loss", "absent"].includes(
+                      (opponent.result ?? "").toLowerCase(),
+                    );
+                    const isResultHidden = !showResults && isCompleted;
+                    const kinboshi = showResults && isKinboshiWin({
                       winnerRank: record.rank,
                       opponentRank: opponentRecord?.rank,
                       winnerDivision: record.division,
@@ -187,17 +343,27 @@ export function RikishiOverlay({
                     return (
                       <article
                         key={`${opponent.opponentID ?? "unknown"}-${index}`}
-                        className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3"
+                        className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 py-3 ${
+                          isResultHidden ? "text-[color:var(--ink-soft)] opacity-65" : ""
+                        }`}
                       >
                         <div
-                          className={`fine-label flex ${kinboshi ? "h-7 w-7" : "h-6 w-6"} items-center justify-center rounded-full border text-[13px] ${getOpponentResultClass(opponent.result, kinboshi)}`}
+                          className={`fine-label flex ${kinboshi ? "h-7 w-7" : "h-6 w-6"} items-center justify-center rounded-full border text-[13px] ${
+                            isResultHidden
+                              ? "border-[color:var(--line-strong)] bg-transparent text-[color:var(--ink-soft)]"
+                              : getOpponentResultClass(opponent.result, kinboshi)
+                          }`}
                           title={
-                            kinboshi
+                            isResultHidden
+                              ? "Result hidden"
+                              : kinboshi
                               ? "Kinboshi: gold star win over Yokozuna"
                               : `Result: ${opponent.result ?? "scheduled"}`
                           }
                         >
-                          {kinboshi ? (
+                          {isResultHidden ? (
+                            "?"
+                          ) : kinboshi ? (
                             <KinboshiStar />
                           ) : (
                             getOpponentResultLabel(opponent.result, kinboshi)
@@ -210,12 +376,14 @@ export function RikishiOverlay({
                           <div
                             className="data-sans mt-1 truncate text-sm text-[color:var(--ink-soft)]"
                             title={
-                              opponent.kimarite
+                              isResultHidden
+                                ? "Result hidden"
+                                : opponent.kimarite
                                 ? `Winning technique: ${opponent.kimarite}`
                                 : "No kimarite recorded"
                             }
                           >
-                            {opponent.kimarite || "予定"}
+                            {isResultHidden ? "非表示" : opponent.kimarite || "予定"}
                           </div>
                         </div>
                         <div className="data-sans text-sm text-[color:var(--ink-soft)]">

@@ -10,6 +10,7 @@ type FavoritesPanelProps = {
   rikishiIndex: RikishiSummary[];
   nameMode: "jp" | "en";
   onToggle: (rikishi: RikishiSummary) => void;
+  onSelect: (rikishiId: number) => void;
 };
 
 export function FavoritesPanel({
@@ -18,6 +19,7 @@ export function FavoritesPanel({
   rikishiIndex,
   nameMode,
   onToggle,
+  onSelect,
 }: FavoritesPanelProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -97,13 +99,15 @@ export function FavoritesPanel({
                 key={rikishi.id}
                 className="flex items-center justify-between border-b border-[color:var(--line)] pb-2"
               >
-                <div>
-                  <div
-                    className="text-xl"
-                    title={rikishi.shikonaEn ?? "English shikona unavailable"}
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(rikishi.id)}
+                    className="max-w-full truncate text-left text-xl transition hover:text-[color:var(--accent)]"
+                    title={rikishi.shikonaEn ? `Open rikishi details: ${rikishi.shikonaEn}` : "Open rikishi details"}
                   >
                     {getVisibleShikona(rikishi)}
-                  </div>
+                  </button>
                   <div
                     className="data-sans mt-0.5 text-[15px] text-[color:var(--ink-soft)]"
                     title={getRikishiMetaTitle(rikishi)}

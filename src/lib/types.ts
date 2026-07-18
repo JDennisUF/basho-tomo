@@ -47,11 +47,20 @@ export type BanzukeResponse = {
 
 export type RikishiSummary = {
   id: number;
+  nskId?: number;
+  sumoDbId?: number;
   shikona: string;
+  shikonaJp?: string;
   shikonaEn?: string;
+  currentRank?: string;
   heya?: string;
   rank?: string;
   division: Division;
+  birthDate?: string;
+  shusshin?: string;
+  height?: number;
+  weight?: number;
+  debut?: string;
 };
 
 export type MatchSide = {

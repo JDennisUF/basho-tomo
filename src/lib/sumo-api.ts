@@ -275,6 +275,62 @@ export async function fetchAllRikishisIndex(limit = 1000): Promise<RikishiSummar
   }
 }
 
+export async function fetchRikishi(rikishiId: number): Promise<RikishiSummary> {
+  const data = (await getJson(`/rikishi/${rikishiId}`)) as Record<string, unknown>;
+  const id = Number(data.id ?? data.rikishiId ?? data.rikishiID ?? rikishiId);
+  const rank = firstString(data.currentRank, data.rank);
+
+  return {
+    id,
+    nskId: numberOrUndefined(data.nskId ?? data.nskID),
+    sumoDbId: numberOrUndefined(
+      data.sumoDbId ??
+        data.sumoDBId ??
+        data.sumodbId ??
+        data.sumodbID ??
+        data.sumoDbRikishiId ??
+        data.sumoDBRikishiId ??
+        data.sumodbRikishiId ??
+        data.sumodbRikishiID,
+    ),
+    shikona:
+      firstString(
+        data.shikonaJp,
+        data.shikonaJP,
+        data.shikonaJapanese,
+        data.nameJp,
+        data.nameJP,
+        data.nameJapanese,
+      ) ??
+      firstString(data.shikonaEn, data.shikonaEnglish, data.shikona, data.nameEn, data.name) ??
+      String(id),
+    shikonaJp: firstString(
+      data.shikonaJp,
+      data.shikonaJP,
+      data.shikonaJapanese,
+      data.nameJp,
+      data.nameJP,
+      data.nameJapanese,
+    ),
+    shikonaEn: firstString(
+      data.shikonaEn,
+      data.shikonaEnglish,
+      data.shikona,
+      data.nameEn,
+      data.name,
+    ),
+    currentRank: rank,
+    heya: firstString(data.heya),
+    rank,
+    division: (firstString(data.currentDivision, data.division) as Division | undefined) ?? "Makuuchi",
+    birthDate: firstString(data.birthDate),
+    shusshin: firstString(data.shusshin),
+    height: numberOrUndefined(data.height),
+    weight: numberOrUndefined(data.weight),
+    debut: firstString(data.debut),
+  };
+}
+
 export async function fetchBanzuke(
   bashoId: string,
   division: Division,
