@@ -23,6 +23,15 @@ export type BanzukeSide = {
   wins?: number;
   losses?: number;
   absences?: number;
+  record?: BanzukeOpponentResult[];
+};
+
+export type BanzukeOpponentResult = {
+  result?: string;
+  opponentShikonaEn?: string;
+  opponentShikonaJp?: string;
+  opponentID?: number;
+  kimarite?: string;
 };
 
 export type BanzukeRecord = {
@@ -99,12 +108,14 @@ export type CurrentBashoRecord = {
   rikishiId: number;
   shikona: string;
   shikonaEn?: string;
+  heya?: string;
   rank?: string;
   rankValue?: number;
   division: Division;
   wins?: number;
   losses?: number;
   absences?: number;
+  opponents: BanzukeOpponentResult[];
 };
 
 export type CachedPayload<T> = {

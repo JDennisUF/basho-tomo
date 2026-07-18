@@ -1,5 +1,6 @@
 import {
   BanzukeRecord,
+  BanzukeOpponentResult,
   BanzukeResponse,
   BashoSummary,
   Division,
@@ -19,6 +20,21 @@ function mapBanzukeSide(side: Record<string, unknown> | undefined) {
   if (!side) {
     return undefined;
   }
+
+  const record = Array.isArray(side.record)
+    ? (side.record as Array<Record<string, unknown>>).map<BanzukeOpponentResult>((entry) => ({
+        result: firstString(entry.result),
+        opponentShikonaEn: firstString(entry.opponentShikonaEn, entry.opponentNameEn),
+        opponentShikonaJp: firstString(
+          entry.opponentShikonaJp,
+          entry.opponentShikonaJP,
+          entry.opponentNameJp,
+          entry.opponentNameJP,
+        ),
+        opponentID: numberOrUndefined(entry.opponentID ?? entry.opponentId),
+        kimarite: firstString(entry.kimarite),
+      }))
+    : undefined;
 
   return {
     rikishiID: Number(side.rikishiID ?? side.rikishiId ?? 0),
@@ -42,6 +58,7 @@ function mapBanzukeSide(side: Record<string, unknown> | undefined) {
     wins: numberOrUndefined(side.wins),
     losses: numberOrUndefined(side.losses),
     absences: numberOrUndefined(side.absences),
+    record,
   };
 }
 
@@ -144,7 +161,7 @@ export function getCurrentBashoId(date = new Date()) {
   return `${resolvedYear}${String(activeMonth).padStart(2, "0")}`;
 }
 
-export function listRecentBashoIds(current = getCurrentBashoId()) {
+export function listRecentBashoIds(current = getCurrentBashoId(), count = 6) {
   const year = Number(current.slice(0, 4));
   const month = Number(current.slice(4, 6));
   const bashoMonths = [1, 3, 5, 7, 9, 11];
@@ -153,7 +170,7 @@ export function listRecentBashoIds(current = getCurrentBashoId()) {
   let cursorYear = year;
   let cursorMonth = month;
 
-  for (let index = 0; index < 6; index += 1) {
+  for (let index = 0; index < count; index += 1) {
     result.push(`${cursorYear}${String(cursorMonth).padStart(2, "0")}`);
     const position = bashoMonths.indexOf(cursorMonth);
     if (position <= 0) {
@@ -273,10 +290,44 @@ export async function fetchBanzuke(
     : Array.isArray(dataRecord?.entries)
       ? (dataRecord.entries as Array<Record<string, unknown>>)
       : null;
+  const eastSource = Array.isArray(dataRecord?.east)
+    ? (dataRecord.east as Array<Record<string, unknown>>)
+    : null;
+  const westSource = Array.isArray(dataRecord?.west)
+    ? (dataRecord.west as Array<Record<string, unknown>>)
+    : null;
 
   let records: BanzukeRecord[] = [];
 
-  if (entriesSource) {
+  if (eastSource || westSource) {
+    const grouped = new Map<string, BanzukeRecord>();
+
+    for (const [sideLabel, source] of [
+      ["east", eastSource],
+      ["west", westSource],
+    ] as const) {
+      if (!source) {
+        continue;
+      }
+
+      for (const entry of source) {
+        const rank = firstString(entry.rank, entry.currentRank) ?? "";
+        const groupKey = rank.replace(/\s+(East|West)$/i, "").trim() || `${rank}:${sideLabel}`;
+        const mappedSide = mapBanzukeSide(entry);
+        const current = grouped.get(groupKey) ?? {};
+
+        if (sideLabel === "east") {
+          current.east = mappedSide;
+        } else {
+          current.west = mappedSide;
+        }
+
+        grouped.set(groupKey, current);
+      }
+    }
+
+    records = [...grouped.values()];
+  } else if (entriesSource) {
     const grouped = new Map<string, BanzukeRecord>();
 
     for (const entry of entriesSource) {
@@ -306,6 +357,20 @@ export async function fetchBanzuke(
         wins: numberOrUndefined(entry.wins),
         losses: numberOrUndefined(entry.losses),
         absences: numberOrUndefined(entry.absences),
+        record: Array.isArray(entry.record)
+          ? (entry.record as Array<Record<string, unknown>>).map<BanzukeOpponentResult>((row) => ({
+              result: firstString(row.result),
+              opponentShikonaEn: firstString(row.opponentShikonaEn, row.opponentNameEn),
+              opponentShikonaJp: firstString(
+                row.opponentShikonaJp,
+                row.opponentShikonaJP,
+                row.opponentNameJp,
+                row.opponentNameJP,
+              ),
+              opponentID: numberOrUndefined(row.opponentID ?? row.opponentId),
+              kimarite: firstString(row.kimarite),
+            }))
+          : undefined,
       };
 
       const current = grouped.get(groupKey) ?? {};
@@ -624,6 +689,26 @@ export function formatRecordLabel(wins?: number, losses?: number, absences?: num
 
   const base = `${wins ?? 0}-${losses ?? 0}`;
   return absences && absences > 0 ? `${base}-${absences}` : base;
+}
+
+export function isYokozunaRank(rank?: string) {
+  return /^Yokozuna\b/i.test(rank ?? "");
+}
+
+export function isMaegashiraRank(rank?: string) {
+  return /^Maegashira\b/i.test(rank ?? "");
+}
+
+export function isKinboshiWin(args: {
+  winnerRank?: string;
+  opponentRank?: string;
+  winnerDivision?: Division;
+}) {
+  return (
+    args.winnerDivision === "Makuuchi" &&
+    isMaegashiraRank(args.winnerRank) &&
+    isYokozunaRank(args.opponentRank)
+  );
 }
 
 export function enrichTorikumiWithRikishi(

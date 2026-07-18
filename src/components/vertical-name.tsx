@@ -11,22 +11,20 @@ export function VerticalName({
   emphasized = false,
   reverse = false,
 }: VerticalNameProps) {
+  const isLatinName = /[A-Za-z]/.test(primary);
+
   return (
-    <div className="min-w-0">
-      <div
-        className={`flex min-w-0 items-baseline gap-2 ${
-          reverse ? "flex-row-reverse justify-start" : ""
-        }`}
+    <div className={`min-w-0 w-full ${reverse ? "text-right" : "text-left"}`}>
+      <span
+        className={`block truncate whitespace-nowrap pb-0.5 leading-[1.12] ${
+          isLatinName ? "text-[19px] sm:text-[22px]" : "text-[20px] sm:text-[24px]"
+        } ${
+          emphasized ? "text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
+        } ${reverse ? "text-right" : "text-left"}`}
+        title={secondary}
       >
-        <span
-          className={`block truncate pb-0.5 text-[23px] leading-[1.12] sm:text-[28px] ${
-            emphasized ? "text-[color:var(--ink)]" : "text-[color:var(--ink-soft)]"
-          }`}
-          title={secondary}
-        >
-          {primary || "読込中"}
-        </span>
-      </div>
+        {primary || "読込中"}
+      </span>
     </div>
   );
 }

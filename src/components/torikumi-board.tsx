@@ -16,6 +16,7 @@ import {
   getBashoLabel,
   getDisplayShikona,
   getDivisionLabel,
+  isKinboshiWin,
 } from "@/lib/sumo-api";
 
 type TorikumiBoardProps = {
@@ -25,20 +26,96 @@ type TorikumiBoardProps = {
   nameMode: "jp" | "en";
   favoriteIds: number[];
   currentRecordMap: Record<number, CurrentBashoRecord>;
+  showResults: boolean;
+  onSelectRikishi: (rikishiId: number) => void;
   onToggleFavorite: (rikishi: RikishiSummary) => void;
   onRefresh: () => void;
 };
 
-function WinnerMark({ active }: { active?: boolean }) {
+function KinboshiStar() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-7 w-7 drop-shadow-[0_0_4px_rgba(255,208,64,0.6)]"
+    >
+      <path
+        d="M12 2.4l2.82 5.72 6.31.92-4.57 4.45 1.08 6.28L12 16.8l-5.64 2.97 1.08-6.28L2.87 9.04l6.31-.92L12 2.4z"
+        fill="#ffd24a"
+        stroke="#8a5a00"
+        strokeWidth="1.35"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function WinnerMark({
+  active,
+  kinboshi = false,
+  showResults = true,
+}: {
+  active?: boolean;
+  kinboshi?: boolean;
+  showResults?: boolean;
+}) {
+  const slotClass = "flex h-7 w-7 items-center justify-center";
+
+  if (!showResults) {
+    return (
+      <span
+        className={`${slotClass} rounded-full border border-[color:var(--line-strong)] bg-[color:var(--line)]`}
+        title="Result hidden"
+      />
+    );
+  }
+
+  if (active && kinboshi) {
+    return (
+      <span
+        className={slotClass}
+        title="Kinboshi: gold star win over Yokozuna"
+      >
+        <KinboshiStar />
+      </span>
+    );
+  }
+
   return (
     <span
-      className={`h-5 w-5 rounded-full border ${
+      className={`${slotClass} rounded-full border ${
         active
           ? "border-[color:var(--ink)] bg-white"
           : "border-[color:var(--ink)] bg-[color:var(--ink)]"
       }`}
       title={active ? "Winner: white circle" : "Loser: black circle"}
     />
+  );
+}
+
+function RecordSlot({
+  align,
+  showResults,
+  recordLabel,
+}: {
+  align: "left" | "right";
+  showResults: boolean;
+  recordLabel?: string;
+}) {
+  const widthClass = "w-[2.75rem] sm:w-[3.25rem]";
+  const alignClass = align === "left" ? "text-left" : "text-right";
+
+  if (!showResults || !recordLabel) {
+    return <span aria-hidden="true" className={`${widthClass} block`} />;
+  }
+
+  return (
+    <span
+      className={`data-sans ${widthClass} ${alignClass} text-[16px] leading-[1.12] text-[color:var(--ink-soft)] sm:text-[19px]`}
+      title="Current tournament record"
+    >
+      {recordLabel}
+    </span>
   );
 }
 
@@ -437,6 +514,8 @@ export function TorikumiBoard({
   nameMode,
   favoriteIds,
   currentRecordMap,
+  showResults,
+  onSelectRikishi,
   onToggleFavorite,
   onRefresh,
 }: TorikumiBoardProps) {
@@ -480,14 +559,14 @@ export function TorikumiBoard({
     <>
       <section className="section-frame overflow-hidden">
         <div className="section-accent" />
-        <div className="flex items-center justify-between border-b border-[color:var(--line)] px-4 py-2.5 sm:px-5">
-          <div className="fine-label text-xl text-[color:var(--ink-soft)]" title="Today's torikumi">
+        <div className="flex items-center justify-between border-b border-[color:var(--line)] px-4 py-3.5 sm:px-5 sm:py-4">
+          <div className="fine-label text-3xl text-[color:var(--ink-soft)] sm:text-4xl" title="Today's torikumi">
             本日取組
           </div>
           <button
             type="button"
             onClick={onRefresh}
-            className="fine-label rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+            className="fine-label relative top-[4px] inline-flex h-10 items-center justify-center self-center rounded-[6px] border border-[color:var(--line)] px-3 leading-none text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
             title="Refresh torikumi now"
           >
             更新
@@ -510,11 +589,31 @@ export function TorikumiBoard({
               const eastRecord = match.east?.rikishiId
                 ? currentRecordMap[match.east.rikishiId]
                 : undefined;
+              const westKinboshi = showResults &&
+                !!match.west?.win &&
+                isKinboshiWin({
+                  winnerRank: match.west?.rank,
+                  opponentRank: match.east?.rank,
+                  winnerDivision: torikumi.division,
+                });
+              const eastKinboshi = showResults &&
+                !!match.east?.win &&
+                isKinboshiWin({
+                  winnerRank: match.east?.rank,
+                  opponentRank: match.west?.rank,
+                  winnerDivision: torikumi.division,
+                });
+              const westRecordLabel = westRecord
+                ? formatRecordLabel(westRecord.wins, westRecord.losses, westRecord.absences)
+                : undefined;
+              const eastRecordLabel = eastRecord
+                ? formatRecordLabel(eastRecord.wins, eastRecord.losses, eastRecord.absences)
+                : undefined;
 
               return (
                 <article
                   key={`${match.day ?? torikumi.day}-${match.matchNo ?? index}`}
-                  className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-2 transition sm:px-5 ${
+                  className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-4 py-2 transition sm:gap-1.5 sm:px-5 ${
                     hasFavorite ? "bg-[color:var(--accent-soft)]/60" : ""
                   } ${hasMatchDetails ? "cursor-pointer hover:bg-[color:var(--accent-soft)]/40" : ""}`}
                   role={hasMatchDetails ? "button" : undefined}
@@ -532,7 +631,7 @@ export function TorikumiBoard({
                   }
                   title={hasMatchDetails ? "Open match details" : undefined}
                 >
-                  <div className="flex min-w-0 items-center justify-start gap-3">
+                  <div className="grid min-w-0 grid-cols-[auto_auto_10rem_2.75rem] items-center justify-start gap-2 sm:grid-cols-[auto_auto_12.5rem_3.25rem] sm:gap-2">
                     <TorikumiFavoriteButton
                       active={westFavorite}
                       onClick={() => {
@@ -559,11 +658,34 @@ export function TorikumiBoard({
                             : "Add favorite"
                       }
                     />
-                    <WinnerMark active={match.west?.win} />
-                    <VerticalName
-                      primary={getVisibleShikona(match.west?.shikona, match.west?.shikonaEn, nameMode)}
-                      secondary={match.west?.shikonaEn}
-                      emphasized={match.west?.win}
+                    <WinnerMark
+                      active={match.west?.win}
+                      kinboshi={westKinboshi}
+                      showResults={showResults}
+                    />
+                    <div className="w-[10rem] overflow-hidden sm:w-[12.5rem]">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (match.west?.rikishiId) {
+                            onSelectRikishi(match.west.rikishiId);
+                          }
+                        }}
+                        className="block w-full text-left"
+                        title={match.west?.shikonaEn ? `Open rikishi details: ${match.west.shikonaEn}` : "Open rikishi details"}
+                      >
+                        <VerticalName
+                          primary={getVisibleShikona(match.west?.shikona, match.west?.shikonaEn, nameMode)}
+                          secondary={match.west?.shikonaEn}
+                          emphasized={showResults && !!match.west?.win}
+                        />
+                      </button>
+                    </div>
+                    <RecordSlot
+                      align="right"
+                      showResults={showResults}
+                      recordLabel={westRecordLabel}
                     />
                   </div>
 
@@ -588,40 +710,6 @@ export function TorikumiBoard({
                     >
                       {match.kimarite ?? "予定"}
                     </div>
-                    {westRecord || eastRecord ? (
-                      <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 text-[11px]">
-                        <span
-                          className="data-sans truncate text-right text-[color:var(--ink-soft)]"
-                          title="Current tournament record"
-                        >
-                          {westRecord
-                            ? formatRecordLabel(
-                                westRecord.wins,
-                                westRecord.losses,
-                                westRecord.absences,
-                              )
-                            : ""}
-                        </span>
-                        <span
-                          className="fine-label text-[11px] text-[color:var(--ink-soft)]"
-                          title="Current records"
-                        >
-                          星取
-                        </span>
-                        <span
-                          className="data-sans truncate text-left text-[color:var(--ink-soft)]"
-                          title="Current tournament record"
-                        >
-                          {eastRecord
-                            ? formatRecordLabel(
-                                eastRecord.wins,
-                                eastRecord.losses,
-                                eastRecord.absences,
-                              )
-                            : ""}
-                        </span>
-                      </div>
-                    ) : null}
                     <div className="flex w-full justify-between">
                       <MatchIdentityDebug
                         id={match.west?.rikishiId}
@@ -634,14 +722,37 @@ export function TorikumiBoard({
                     </div>
                   </div>
 
-                  <div className="flex min-w-0 items-center justify-end gap-3">
-                    <VerticalName
-                      primary={getVisibleShikona(match.east?.shikona, match.east?.shikonaEn, nameMode)}
-                      secondary={match.east?.shikonaEn}
-                      emphasized={match.east?.win}
-                      reverse
+                  <div className="grid w-full min-w-0 grid-cols-[2.75rem_10rem_auto_auto] items-center justify-end gap-2 sm:grid-cols-[3.25rem_12.5rem_auto_auto] sm:gap-2">
+                    <RecordSlot
+                      align="left"
+                      showResults={showResults}
+                      recordLabel={eastRecordLabel}
                     />
-                    <WinnerMark active={match.east?.win} />
+                    <div className="w-[10rem] overflow-hidden sm:w-[12.5rem]">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (match.east?.rikishiId) {
+                            onSelectRikishi(match.east.rikishiId);
+                          }
+                        }}
+                        className="block w-full text-right"
+                        title={match.east?.shikonaEn ? `Open rikishi details: ${match.east.shikonaEn}` : "Open rikishi details"}
+                      >
+                        <VerticalName
+                          primary={getVisibleShikona(match.east?.shikona, match.east?.shikonaEn, nameMode)}
+                          secondary={match.east?.shikonaEn}
+                          emphasized={showResults && !!match.east?.win}
+                          reverse
+                        />
+                      </button>
+                    </div>
+                    <WinnerMark
+                      active={match.east?.win}
+                      kinboshi={eastKinboshi}
+                      showResults={showResults}
+                    />
                     <TorikumiFavoriteButton
                       active={eastFavorite}
                       onClick={() => {

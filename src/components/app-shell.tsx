@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { BanzukePanel } from "@/components/banzuke-panel";
 import { FavoritesPanel } from "@/components/favorites-panel";
+import { RikishiOverlay } from "@/components/rikishi-overlay";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
 import {
@@ -41,7 +42,7 @@ const DIVISIONS: Division[] = [
   "Jonidan",
   "Jonokuchi",
 ];
-const STABLE_VERSION = "v3-banzuke-cache-live-records";
+const STABLE_VERSION = "v4-banzuke-cache-east-west-shape";
 const BASHO_SUMMARY_VERSION = "v2-basho-summary-cache";
 const TORIKUMI_VERSION = "v6-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
@@ -101,6 +102,13 @@ function HydratedAppShell() {
   const [favoriteIds, setFavoriteIds] = useState<number[]>(() =>
     readPreference<number[]>("favorites", []),
   );
+  const [selectedRikishiId, setSelectedRikishiId] = useState<number | null>(null);
+  const [showLeaders, setShowLeaders] = useState<boolean>(() =>
+    readPreference<boolean>("show-leaders", true),
+  );
+  const [showResults, setShowResults] = useState<boolean>(() =>
+    readPreference<boolean>("show-results", true),
+  );
   const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
   const [torikumiError, setTorikumiError] = useState<string | null>(null);
@@ -116,6 +124,14 @@ function HydratedAppShell() {
   useEffect(() => {
     writePreference("torikumi-name-mode", torikumiNameMode);
   }, [torikumiNameMode]);
+
+  useEffect(() => {
+    writePreference("show-leaders", showLeaders);
+  }, [showLeaders]);
+
+  useEffect(() => {
+    writePreference("show-results", showResults);
+  }, [showResults]);
 
   useEffect(() => {
     let cancelled = false;
@@ -405,6 +421,7 @@ function HydratedAppShell() {
   );
   const currentRecordMap = useMemo(() => {
     const recordMap = new Map<number, CurrentBashoRecord>();
+    const rikishiLookup = new Map(rikishi.map((entry) => [entry.id, entry]));
 
     for (const response of Object.values(hydratedBanzukeMap)) {
       if (!response) {
@@ -425,26 +442,30 @@ function HydratedAppShell() {
             continue;
           }
 
+          const enrichedRikishi = rikishiLookup.get(side.rikishiID);
           recordMap.set(side.rikishiID, {
             rikishiId: side.rikishiID,
             shikona: side.shikonaJp ?? side.shikonaEn ?? String(side.rikishiID),
             shikonaEn: side.shikonaEn,
+            heya: enrichedRikishi?.heya,
             rank: side.rank,
             rankValue: side.rankValue,
             division: response.division,
             wins: side.wins,
             losses: side.losses,
             absences: side.absences,
+            opponents: side.record ?? [],
           });
         }
       }
     }
 
     return Object.fromEntries(recordMap.entries());
-  }, [hydratedBanzukeMap]);
+  }, [hydratedBanzukeMap, rikishi]);
   const topCurrentRecords = useMemo(
     () =>
       Object.values(currentRecordMap)
+        .filter((entry) => entry.division === division)
         .sort((left, right) => {
           const winDiff = (right.wins ?? 0) - (left.wins ?? 0);
           if (winDiff !== 0) {
@@ -469,8 +490,15 @@ function HydratedAppShell() {
           return (left.rankValue ?? Number.MAX_SAFE_INTEGER) - (right.rankValue ?? Number.MAX_SAFE_INTEGER);
         })
         .slice(0, 5),
-    [currentRecordMap],
+    [currentRecordMap, division],
   );
+  const rikishiById = useMemo(
+    () => new Map(rikishi.map((entry) => [entry.id, entry])),
+    [rikishi],
+  );
+  const selectedRikishi = selectedRikishiId ? rikishiById.get(selectedRikishiId) ?? null : null;
+  const selectedRikishiRecord =
+    selectedRikishiId !== null ? currentRecordMap[selectedRikishiId] : undefined;
 
   function toggleFavorite(rikishiEntry: RikishiSummary) {
     setFavoriteIds((current) =>
@@ -484,7 +512,7 @@ function HydratedAppShell() {
     setTorikumiRefreshNonce((current) => current + 1);
   }
 
-  const recentBashoIds = listRecentBashoIds(bashoId);
+  const recentBashoIds = listRecentBashoIds(getCurrentBashoId(), 24);
 
   return (
     <main className="mx-auto min-h-screen max-w-[1440px] px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
@@ -504,7 +532,7 @@ function HydratedAppShell() {
               </p>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-4">
+            <div className="grid gap-2 sm:grid-cols-5">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -599,38 +627,44 @@ function HydratedAppShell() {
                   </button>
                 </div>
               </label>
+
+              <label className="flex flex-col gap-2">
+                <span
+                  className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
+                  title="Show or hide bout results"
+                >
+                  勝敗
+                </span>
+                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowResults(true)}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      showResults
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Show bout results"
+                  >
+                    表示
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResults(false)}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      !showResults
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Hide bout results"
+                  >
+                    隠す
+                  </button>
+                </div>
+              </label>
             </div>
           </div>
         </header>
-
-        <section className="grid gap-3 border-b border-[color:var(--line)] px-5 py-3 sm:grid-cols-4 sm:px-8">
-          <div>
-            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Current division">
-              現在
-            </div>
-            <div className="mt-1 text-xl sm:text-2xl">{getDivisionLabel(division)}</div>
-          </div>
-          <div>
-            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Selected day">
-              本日
-            </div>
-            <div className="mt-1 text-xl sm:text-2xl">{day}日目</div>
-          </div>
-          <div>
-            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Cached rikishi count">
-              人数
-            </div>
-            <div className="mt-1 text-xl data-sans sm:text-2xl" title="Cached basho rikishi">
-              {rikishi.length} 名
-            </div>
-          </div>
-          <div>
-            <div className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Cache mode for selected torikumi">
-              保持
-            </div>
-            <div className="mt-1 text-xl sm:text-2xl">{cacheModeLabel}</div>
-          </div>
-        </section>
 
         <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_320px] lg:px-6 lg:py-5">
           <div className="space-y-5">
@@ -641,12 +675,15 @@ function HydratedAppShell() {
               nameMode={torikumiNameMode}
               favoriteIds={favoriteIds}
               currentRecordMap={currentRecordMap}
+              showResults={showResults}
+              onSelectRikishi={setSelectedRikishiId}
               onToggleFavorite={toggleFavorite}
               onRefresh={refreshTorikumiNow}
             />
             <BanzukePanel
               banzuke={hydratedBanzukeMap[division]}
               favoriteIds={favoriteIds}
+              nameMode={torikumiNameMode}
               onToggleFavorite={toggleFavorite}
             />
           </div>
@@ -684,13 +721,28 @@ function HydratedAppShell() {
 
             <section className="section-frame p-5 sm:p-6">
               <div className="section-accent" />
-              <div className="border-b border-[color:var(--line)] pb-4">
-                <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Best current tournament records">
-                  星取上位
+              <div className="flex items-start justify-between gap-4 border-b border-[color:var(--line)] pb-4">
+                <div>
+                  <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Best current tournament records">
+                    星取上位
+                  </div>
+                  <h2 className="mt-2 text-3xl">勝ち星五傑</h2>
                 </div>
-                <h2 className="mt-2 text-3xl">勝ち星五傑</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowLeaders((current) => !current)}
+                  className="fine-label rounded-[6px] border border-[color:var(--line)] px-3 py-1.5 text-xs text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                  title={showLeaders ? "Hide leader records to avoid spoilers" : "Show leader records"}
+                  aria-pressed={showLeaders}
+                >
+                  {showLeaders ? "隠す" : "見る"}
+                </button>
               </div>
-              {topCurrentRecords.length === 0 ? (
+              {!showLeaders ? (
+                <p className="mt-4 text-sm text-[color:var(--ink-soft)]" title="Leader records hidden.">
+                  非表示
+                </p>
+              ) : topCurrentRecords.length === 0 ? (
                 <p className="mt-4 text-sm text-[color:var(--ink-soft)]" title="No current records available.">
                   記録なし
                 </p>
@@ -715,9 +767,14 @@ function HydratedAppShell() {
                             >
                               {index + 1}
                             </span>
-                            <span className="truncate text-xl" title={entry.shikonaEn ?? "English shikona unavailable"}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedRikishiId(entry.rikishiId)}
+                              className="truncate text-left text-xl"
+                              title={entry.shikonaEn ? `Open rikishi details: ${entry.shikonaEn}` : "Open rikishi details"}
+                            >
                               {displayName}
-                            </span>
+                            </button>
                           </div>
                           <div
                             className="data-sans mt-1 text-[14px] text-[color:var(--ink-soft)]"
@@ -749,6 +806,15 @@ function HydratedAppShell() {
           </div>
         </div>
       </div>
+      {selectedRikishi ? (
+        <RikishiOverlay
+          rikishi={selectedRikishi}
+          record={selectedRikishiRecord}
+          currentRecordMap={currentRecordMap}
+          nameMode={torikumiNameMode}
+          onClose={() => setSelectedRikishiId(null)}
+        />
+      ) : null}
     </main>
   );
 }

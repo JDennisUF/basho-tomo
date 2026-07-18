@@ -6,8 +6,21 @@ import { getDisplayShikona } from "@/lib/sumo-api";
 type BanzukePanelProps = {
   banzuke: BanzukeResponse | null;
   favoriteIds: number[];
+  nameMode: "jp" | "en";
   onToggleFavorite: (rikishi: RikishiSummary) => void;
 };
+
+function getVisibleShikona(
+  shikonaJp: string | undefined,
+  shikonaEn: string | undefined,
+  nameMode: "jp" | "en",
+) {
+  if (nameMode === "en") {
+    return shikonaEn ?? getDisplayShikona(shikonaJp) ?? "空位";
+  }
+
+  return getDisplayShikona(shikonaJp) || shikonaEn || "空位";
+}
 
 function FavoriteButton({
   active,
@@ -37,6 +50,7 @@ function FavoriteButton({
 export function BanzukePanel({
   banzuke,
   favoriteIds,
+  nameMode,
   onToggleFavorite,
 }: BanzukePanelProps) {
   if (!banzuke) {
@@ -54,11 +68,11 @@ export function BanzukePanel({
     <section className="section-frame overflow-hidden">
       <div className="section-accent" />
       <div className="border-b border-[color:var(--line)] px-4 py-3">
-        <div className="fine-label text-xs text-[color:var(--ink-soft)]" title="Banzuke">
+        <div className="fine-label text-xl text-[color:var(--ink-soft)]" title="Banzuke">
           番付
         </div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-b border-[color:var(--line)] px-4 py-2 text-sm text-[color:var(--ink-soft)]">
+      <div className="grid grid-cols-[1fr_1fr] border-b border-[color:var(--line)] px-4 py-2 text-[14px] text-[color:var(--ink-soft)] sm:px-5">
         <div title="West">西</div>
         <div className="text-right" title="East">
           東
@@ -68,14 +82,21 @@ export function BanzukePanel({
         {banzuke.records.map((record, index) => (
           <article
             key={`${record.east?.rikishiID ?? "e"}-${record.west?.rikishiID ?? "w"}-${index}`}
-            className="grid grid-cols-[1fr_1fr] gap-3 px-3 py-2.5 sm:px-4"
+            className="grid grid-cols-[1fr_1fr] gap-3 px-4 py-2 sm:px-5"
           >
             <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="text-base">
-                  {getDisplayShikona(record.west?.shikonaJp) || record.west?.shikonaEn || "空位"}
+              <div className="min-w-0">
+                <div
+                  className="truncate text-[20px] leading-[1.12] sm:text-[24px]"
+                  title={
+                    nameMode === "jp"
+                      ? record.west?.shikonaEn ?? "English shikona unavailable"
+                      : record.west?.shikonaEn ?? getDisplayShikona(record.west?.shikonaJp) ?? "Shikona unavailable"
+                  }
+                >
+                  {getVisibleShikona(record.west?.shikonaJp, record.west?.shikonaEn, nameMode)}
                 </div>
-                <div className="data-sans mt-0.5 text-[11px] text-[color:var(--ink-soft)]">
+                <div className="data-sans mt-1 text-[13px] text-[color:var(--ink-soft)]" title={record.west?.rank}>
                   {record.west?.rank ?? ""}
                 </div>
               </div>
@@ -86,8 +107,7 @@ export function BanzukePanel({
                     onToggleFavorite({
                       id: record.west?.rikishiID ?? 0,
                       shikona:
-                        getDisplayShikona(record.west?.shikonaJp) ||
-                        record.west?.shikonaEn ||
+                        getVisibleShikona(record.west?.shikonaJp, record.west?.shikonaEn, "jp") ||
                         String(record.west?.rikishiID),
                       shikonaEn: record.west?.shikonaEn,
                       rank: record.west?.rank,
@@ -106,8 +126,7 @@ export function BanzukePanel({
                     onToggleFavorite({
                       id: record.east?.rikishiID ?? 0,
                       shikona:
-                        getDisplayShikona(record.east?.shikonaJp) ||
-                        record.east?.shikonaEn ||
+                        getVisibleShikona(record.east?.shikonaJp, record.east?.shikonaEn, "jp") ||
                         String(record.east?.rikishiID),
                       shikonaEn: record.east?.shikonaEn,
                       rank: record.east?.rank,
@@ -117,11 +136,18 @@ export function BanzukePanel({
                   title={record.east.shikonaEn}
                 />
               ) : null}
-              <div>
-                <div className="text-base">
-                  {getDisplayShikona(record.east?.shikonaJp) || record.east?.shikonaEn || "空位"}
+              <div className="min-w-0">
+                <div
+                  className="truncate text-[20px] leading-[1.12] sm:text-[24px]"
+                  title={
+                    nameMode === "jp"
+                      ? record.east?.shikonaEn ?? "English shikona unavailable"
+                      : record.east?.shikonaEn ?? getDisplayShikona(record.east?.shikonaJp) ?? "Shikona unavailable"
+                  }
+                >
+                  {getVisibleShikona(record.east?.shikonaJp, record.east?.shikonaEn, nameMode)}
                 </div>
-                <div className="data-sans mt-0.5 text-[11px] text-[color:var(--ink-soft)]">
+                <div className="data-sans mt-1 text-[13px] text-[color:var(--ink-soft)]" title={record.east?.rank}>
                   {record.east?.rank ?? ""}
                 </div>
               </div>
