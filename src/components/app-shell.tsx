@@ -33,7 +33,7 @@ import {
   RikishiSummary,
   TorikumiResponse,
 } from "@/lib/types";
-import { formatRecordLabel, getDisplayShikona } from "@/lib/sumo-api";
+import { formatRankLabel, formatRecordLabel, getDisplayShikona } from "@/lib/sumo-api";
 
 const DIVISIONS: Division[] = [
   "Makuuchi",
@@ -59,6 +59,20 @@ function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
     Jonidan: null,
     Jonokuchi: null,
   };
+}
+
+function getEnglishRankTitle(division: Division, rank?: string) {
+  if (!rank) {
+    return division;
+  }
+
+  if (division === "Makuuchi") {
+    return rank;
+  }
+
+  return rank.toLowerCase().startsWith(division.toLowerCase())
+    ? rank
+    : `${division} ${rank}`;
 }
 
 export function AppShell() {
@@ -500,7 +514,7 @@ function HydratedAppShell() {
 
           return (left.rankValue ?? Number.MAX_SAFE_INTEGER) - (right.rankValue ?? Number.MAX_SAFE_INTEGER);
         })
-        .slice(0, 5),
+        .slice(0, 10),
     [currentRecordMap, division],
   );
   const rikishiById = useMemo(
@@ -705,7 +719,7 @@ function HydratedAppShell() {
                   <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Best current tournament records">
                     星取上位
                   </div>
-                  <h2 className="mt-2 text-3xl">勝ち星五傑</h2>
+                  <h2 className="mt-2 text-3xl">勝ち星十傑</h2>
                 </div>
                 <button
                   type="button"
@@ -726,44 +740,42 @@ function HydratedAppShell() {
                   記録なし
                 </p>
               ) : (
-                <ol className="mt-4 space-y-3">
+                <ol className="mt-4 space-y-1">
                   {topCurrentRecords.map((entry, index) => {
                     const displayName =
                       torikumiNameMode === "en"
                         ? entry.shikonaEn ?? getDisplayShikona(entry.shikona)
                         : getDisplayShikona(entry.shikona) || entry.shikonaEn || String(entry.rikishiId);
+                    const rankLabel = formatRankLabel(entry.rank) || getDivisionLabel(entry.division);
+                    const rankTitle = getEnglishRankTitle(entry.division, entry.rank);
 
                     return (
                       <li
                         key={entry.rikishiId}
-                        className="flex items-start justify-between gap-3 border-b border-[color:var(--line)] pb-3"
+                        className="grid grid-cols-[1.5rem_minmax(0,1fr)_6.75rem_3.5rem] items-center gap-2 border-b border-[color:var(--line)] py-1.5"
                       >
-                        <div className="min-w-0">
-                          <div className="flex items-baseline gap-3">
-                            <span
-                              className="data-sans text-sm text-[color:var(--ink-soft)]"
-                              title={`Rank in top records: ${index + 1}`}
-                            >
-                              {index + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setSelectedRikishiId(entry.rikishiId)}
-                              className="truncate text-left text-xl"
-                              title={entry.shikonaEn ? `Open rikishi details: ${entry.shikonaEn}` : "Open rikishi details"}
-                            >
-                              {displayName}
-                            </button>
-                          </div>
-                          <div
-                            className="data-sans mt-1 text-[14px] text-[color:var(--ink-soft)]"
-                            title="Division and rank"
-                          >
-                            {getDivisionLabel(entry.division)} / {entry.rank ?? "番付未詳"}
-                          </div>
+                        <span
+                          className="data-sans text-sm text-[color:var(--ink-soft)]"
+                          title={`Rank in top records: ${index + 1}`}
+                        >
+                          {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRikishiId(entry.rikishiId)}
+                          className="min-w-0 truncate text-left text-lg transition hover:text-[color:var(--accent)]"
+                          title={entry.shikonaEn ? `Open rikishi details: ${entry.shikonaEn}` : "Open rikishi details"}
+                        >
+                          {displayName}
+                        </button>
+                        <div
+                          className="data-sans min-w-0 truncate text-left text-[13px] text-[color:var(--ink-soft)]"
+                          title={rankTitle}
+                        >
+                          {rankLabel}
                         </div>
                         <div
-                          className="data-sans shrink-0 text-lg text-[color:var(--ink)]"
+                          className="data-sans shrink-0 text-right text-base text-[color:var(--ink)]"
                           title="Current tournament record"
                         >
                           {formatRecordLabel(entry.wins, entry.losses, entry.absences)}
