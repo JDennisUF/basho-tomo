@@ -6,6 +6,7 @@ import { FavoritesPanel } from "@/components/favorites-panel";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
+import { DEFAULT_THEME, isThemeId, THEMES, ThemeId } from "@/lib/themes";
 import {
   enrichBanzukeWithRikishi,
   enrichTorikumiWithRikishi,
@@ -85,6 +86,10 @@ export function AppShell() {
 
 function HydratedAppShell() {
   const [bashoId, setBashoId] = useState(getCurrentBashoId);
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    const storedTheme = readPreference<ThemeId | string>("theme", DEFAULT_THEME);
+    return isThemeId(storedTheme) ? storedTheme : DEFAULT_THEME;
+  });
   const [division, setDivision] = useState<Division>(() =>
     readPreference<Division>("division", "Makuuchi"),
   );
@@ -112,6 +117,11 @@ function HydratedAppShell() {
   const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
   const [torikumiError, setTorikumiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    writePreference("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     writePreference("division", division);
@@ -532,7 +542,45 @@ function HydratedAppShell() {
               </p>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-5">
+            <div className="grid gap-2 sm:grid-cols-6">
+              <label className="flex flex-col gap-2 sm:col-span-2">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Theme">
+                  意匠
+                </span>
+                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                  {THEMES.map((item) => {
+                    const active = theme === item.id;
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setTheme(item.id)}
+                        className={`flex min-h-16 flex-col items-start justify-center gap-2 rounded-[6px] px-2 py-2 text-left transition ${
+                          active
+                            ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                            : "text-[color:var(--ink-soft)]"
+                        }`}
+                        title={item.description}
+                        aria-pressed={active}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          {item.swatches.map((swatch) => (
+                            <span
+                              key={swatch}
+                              aria-hidden="true"
+                              className="h-3 w-3 rounded-full border border-black/10"
+                              style={{ backgroundColor: swatch }}
+                            />
+                          ))}
+                        </span>
+                        <span className="fine-label text-xs leading-none">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </label>
+
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
