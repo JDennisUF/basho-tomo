@@ -837,7 +837,7 @@ function HydratedAppShell() {
                 >
                   {THEMES.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.label}
+                      {item.label} {item.description}
                     </option>
                   ))}
                 </select>

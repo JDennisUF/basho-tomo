@@ -1,4 +1,4 @@
-export type ThemeId = "washi" | "tatami" | "urushi";
+export type ThemeId = "washi" | "tatami" | "urushi" | "sakura" | "fuji" | "ai" | "sumi";
 
 export type ThemeDefinition = {
   id: ThemeId;
@@ -27,6 +27,30 @@ export const THEMES: ThemeDefinition[] = [
     label: "漆",
     description: "Urushi Night",
     swatches: ["#201817", "#b4473a", "#c8a255"],
+  },
+  {
+    id: "sakura",
+    label: "桜",
+    description: "Sakura Paper",
+    swatches: ["#f7edf0", "#a94863", "#9f7b45"],
+  },
+  {
+    id: "fuji",
+    label: "藤",
+    description: "Wisteria Mist",
+    swatches: ["#eeeaf3", "#74528d", "#6f7f62"],
+  },
+  {
+    id: "ai",
+    label: "藍",
+    description: "Indigo Cloth",
+    swatches: ["#17233a", "#d6b56d", "#f0eadc"],
+  },
+  {
+    id: "sumi",
+    label: "墨",
+    description: "Ink Wash",
+    swatches: ["#ded9cf", "#2f3130", "#a33c34"],
   },
 ];
 

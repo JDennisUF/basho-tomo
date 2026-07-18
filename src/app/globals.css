@@ -130,6 +130,134 @@ html[data-theme="urushi"] {
   --panel-top-highlight: rgba(200, 162, 85, 0.1);
 }
 
+html[data-theme="sakura"] {
+  --bg: #f7edf0;
+  --bg-soft: #ead7dc;
+  --panel: rgba(250, 241, 243, 0.86);
+  --panel-strong: rgba(247, 237, 240, 0.95);
+  --ink: #271a1d;
+  --ink-soft: #685158;
+  --line: rgba(92, 49, 62, 0.17);
+  --line-strong: rgba(92, 49, 62, 0.29);
+  --accent: #a94863;
+  --accent-deep: #88364e;
+  --accent-soft: rgba(169, 72, 99, 0.15);
+  --gold: #9f7b45;
+  --shadow: rgba(72, 34, 45, 0.08);
+  --page-bg:
+    radial-gradient(ellipse at 18% 12%, rgba(169, 72, 99, 0.11), transparent 25%),
+    radial-gradient(ellipse at 82% 0%, rgba(159, 123, 69, 0.08), transparent 28%),
+    var(--bg);
+  --body-texture:
+    linear-gradient(rgba(92, 49, 62, 0.018), rgba(92, 49, 62, 0.018)),
+    radial-gradient(ellipse at 18px 14px, rgba(169, 72, 99, 0.055) 0 2px, transparent 3px),
+    radial-gradient(ellipse at 70px 52px, rgba(169, 72, 99, 0.04) 0 2px, transparent 3px);
+  --selection: rgba(169, 72, 99, 0.2);
+  --section-inner-line: rgba(92, 49, 62, 0.08);
+  --panel-top-highlight: rgba(169, 72, 99, 0.09);
+}
+
+html[data-theme="fuji"] {
+  --bg: #eeeaf3;
+  --bg-soft: #ddd6e7;
+  --panel: rgba(246, 242, 249, 0.86);
+  --panel-strong: rgba(239, 234, 245, 0.95);
+  --ink: #241d29;
+  --ink-soft: #5c5262;
+  --line: rgba(65, 47, 82, 0.17);
+  --line-strong: rgba(65, 47, 82, 0.3);
+  --accent: #74528d;
+  --accent-deep: #5d4074;
+  --accent-soft: rgba(116, 82, 141, 0.16);
+  --gold: #6f7f62;
+  --shadow: rgba(45, 34, 58, 0.08);
+  --page-bg:
+    linear-gradient(180deg, rgba(116, 82, 141, 0.1), transparent 30%),
+    radial-gradient(circle at top right, rgba(111, 127, 98, 0.1), transparent 24%),
+    var(--bg);
+  --body-texture:
+    linear-gradient(rgba(65, 47, 82, 0.016), rgba(65, 47, 82, 0.016)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 42px,
+      rgba(116, 82, 141, 0.04) 43px,
+      transparent 46px
+    );
+  --selection: rgba(116, 82, 141, 0.22);
+  --section-inner-line: rgba(65, 47, 82, 0.08);
+  --panel-top-highlight: rgba(116, 82, 141, 0.09);
+}
+
+html[data-theme="ai"] {
+  --bg: #17233a;
+  --bg-soft: #20304e;
+  --panel: rgba(29, 43, 68, 0.86);
+  --panel-strong: rgba(35, 50, 77, 0.95);
+  --ink: #f0eadc;
+  --ink-soft: #c9c1b2;
+  --line: rgba(240, 234, 220, 0.15);
+  --line-strong: rgba(240, 234, 220, 0.27);
+  --accent: #d6b56d;
+  --accent-deep: #e3c881;
+  --accent-soft: rgba(214, 181, 109, 0.18);
+  --gold: #d6b56d;
+  --shadow: rgba(3, 7, 14, 0.3);
+  --page-bg:
+    radial-gradient(circle at top, rgba(214, 181, 109, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 22%),
+    var(--bg);
+  --body-texture:
+    linear-gradient(rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.012)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 13px,
+      rgba(240, 234, 220, 0.025) 14px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 13px,
+      rgba(240, 234, 220, 0.02) 14px
+    );
+  --selection: rgba(214, 181, 109, 0.26);
+  --section-inner-line: rgba(240, 234, 220, 0.08);
+  --panel-top-highlight: rgba(214, 181, 109, 0.1);
+}
+
+html[data-theme="sumi"] {
+  --bg: #ded9cf;
+  --bg-soft: #cbc5bb;
+  --panel: rgba(238, 234, 225, 0.86);
+  --panel-strong: rgba(229, 225, 216, 0.95);
+  --ink: #202221;
+  --ink-soft: #555856;
+  --line: rgba(40, 42, 41, 0.17);
+  --line-strong: rgba(40, 42, 41, 0.29);
+  --accent: #a33c34;
+  --accent-deep: #812f29;
+  --accent-soft: rgba(163, 60, 52, 0.14);
+  --gold: #7e7669;
+  --shadow: rgba(31, 31, 29, 0.08);
+  --page-bg:
+    radial-gradient(ellipse at 15% 0%, rgba(32, 34, 33, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent 24%),
+    var(--bg);
+  --body-texture:
+    linear-gradient(rgba(32, 34, 33, 0.018), rgba(32, 34, 33, 0.018)),
+    radial-gradient(ellipse at 20% 18%, rgba(32, 34, 33, 0.045), transparent 18%),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 17px,
+      rgba(32, 34, 33, 0.018) 18px
+    );
+  --selection: rgba(163, 60, 52, 0.2);
+  --section-inner-line: rgba(40, 42, 41, 0.08);
+  --panel-top-highlight: rgba(163, 60, 52, 0.08);
+}
+
 * {
   box-sizing: border-box;
 }
