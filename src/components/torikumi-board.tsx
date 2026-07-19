@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CurrentBashoRecord,
   HeadToHeadResponse,
+  MatchSide,
   RikishiSummary,
   TorikumiMatch,
   TorikumiResponse,
@@ -24,13 +25,17 @@ type TorikumiBoardProps = {
   isLoading: boolean;
   error: string | null;
   nameMode: "jp" | "en";
+  swapSides: boolean;
   favoriteIds: number[];
   currentRecordMap: Record<number, CurrentBashoRecord>;
   showResults: boolean;
   onSelectRikishi: (rikishiId: number) => void;
   onToggleFavorite: (rikishi: RikishiSummary) => void;
+  onToggleSwapSides: () => void;
   onRefresh: () => void;
 };
+
+type TorikumiSideKey = "west" | "east";
 
 function KinboshiStar() {
   return (
@@ -176,6 +181,10 @@ function getVisibleShikona(
   }
 
   return getDisplayShikona(shikona) || shikonaEn || "未詳";
+}
+
+function getMatchSide(match: TorikumiMatch, side: TorikumiSideKey): MatchSide | undefined {
+  return side === "west" ? match.west : match.east;
 }
 
 function TechniqueList({
@@ -512,11 +521,13 @@ export function TorikumiBoard({
   isLoading,
   error,
   nameMode,
+  swapSides,
   favoriteIds,
   currentRecordMap,
   showResults,
   onSelectRikishi,
   onToggleFavorite,
+  onToggleSwapSides,
   onRefresh,
 }: TorikumiBoardProps) {
   const [selectedMatch, setSelectedMatch] = useState<TorikumiMatch | null>(null);
@@ -563,51 +574,73 @@ export function TorikumiBoard({
           <div className="fine-label text-3xl text-[color:var(--ink-soft)] sm:text-4xl" title="Today's torikumi">
             本日取組
           </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="fine-label relative top-[4px] inline-flex h-10 items-center justify-center self-center rounded-[6px] border border-[color:var(--line)] px-3 leading-none text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
-            title="Refresh torikumi now"
-          >
-            更新
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onToggleSwapSides}
+              className={`fine-label relative top-[4px] inline-flex h-10 items-center justify-center self-center rounded-[6px] border px-3 leading-none text-sm transition ${
+                swapSides
+                  ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                  : "border-[color:var(--line)] text-[color:var(--ink-soft)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+              }`}
+              title="Show East rikishi on the left"
+              aria-label="Show East rikishi on the left"
+              aria-pressed={swapSides}
+            >
+              東左
+            </button>
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="fine-label relative top-[4px] inline-flex h-10 items-center justify-center self-center rounded-[6px] border border-[color:var(--line)] px-3 leading-none text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+              title="Refresh torikumi now"
+            >
+              更新
+            </button>
+          </div>
         </div>
         <div className="divide-y divide-[color:var(--line)]">
           {torikumi.matches.map((match, index) => (
             (() => {
-              const westFavorite = match.west?.rikishiId
-                ? favoriteIds.includes(match.west.rikishiId)
+              const leftSideKey: TorikumiSideKey = swapSides ? "east" : "west";
+              const rightSideKey: TorikumiSideKey = swapSides ? "west" : "east";
+              const leftSide = getMatchSide(match, leftSideKey);
+              const rightSide = getMatchSide(match, rightSideKey);
+              const leftFavorite = leftSide?.rikishiId
+                ? favoriteIds.includes(leftSide.rikishiId)
                 : false;
-              const eastFavorite = match.east?.rikishiId
-                ? favoriteIds.includes(match.east.rikishiId)
+              const rightFavorite = rightSide?.rikishiId
+                ? favoriteIds.includes(rightSide.rikishiId)
                 : false;
-              const hasFavorite = westFavorite || eastFavorite;
+              const hasFavorite = leftFavorite || rightFavorite;
               const hasMatchDetails = !!match.west?.rikishiId && !!match.east?.rikishiId;
-              const westRecord = match.west?.rikishiId
-                ? currentRecordMap[match.west.rikishiId]
+              const leftRecord = leftSide?.rikishiId
+                ? currentRecordMap[leftSide.rikishiId]
                 : undefined;
-              const eastRecord = match.east?.rikishiId
-                ? currentRecordMap[match.east.rikishiId]
+              const rightRecord = rightSide?.rikishiId
+                ? currentRecordMap[rightSide.rikishiId]
                 : undefined;
-              const westKinboshi = showResults &&
-                !!match.west?.win &&
+              const leftOpponent = getMatchSide(match, rightSideKey);
+              const rightOpponent = getMatchSide(match, leftSideKey);
+              const leftKinboshi = showResults &&
+                !!leftSide?.win &&
                 isKinboshiWin({
-                  winnerRank: match.west?.rank,
-                  opponentRank: match.east?.rank,
+                  winnerRank: leftSide?.rank,
+                  opponentRank: leftOpponent?.rank,
                   winnerDivision: torikumi.division,
                 });
-              const eastKinboshi = showResults &&
-                !!match.east?.win &&
+              const rightKinboshi = showResults &&
+                !!rightSide?.win &&
                 isKinboshiWin({
-                  winnerRank: match.east?.rank,
-                  opponentRank: match.west?.rank,
+                  winnerRank: rightSide?.rank,
+                  opponentRank: rightOpponent?.rank,
                   winnerDivision: torikumi.division,
                 });
-              const westRecordLabel = westRecord
-                ? formatRecordLabel(westRecord.wins, westRecord.losses, westRecord.absences)
+              const leftRecordLabel = leftRecord
+                ? formatRecordLabel(leftRecord.wins, leftRecord.losses, leftRecord.absences)
                 : undefined;
-              const eastRecordLabel = eastRecord
-                ? formatRecordLabel(eastRecord.wins, eastRecord.losses, eastRecord.absences)
+              const rightRecordLabel = rightRecord
+                ? formatRecordLabel(rightRecord.wins, rightRecord.losses, rightRecord.absences)
                 : undefined;
 
               return (
@@ -633,34 +666,34 @@ export function TorikumiBoard({
                 >
                   <div className="grid min-w-0 grid-cols-[auto_auto_10rem_2.75rem] items-center justify-start gap-2 sm:grid-cols-[auto_auto_12.5rem_3.25rem] sm:gap-2">
                     <TorikumiFavoriteButton
-                      active={westFavorite}
+                      active={leftFavorite}
                       onClick={() => {
-                        if (!match.west?.rikishiId) {
+                        if (!leftSide?.rikishiId) {
                           return;
                         }
 
                         onToggleFavorite({
-                          id: match.west.rikishiId,
+                          id: leftSide.rikishiId,
                           shikona:
-                            getDisplayShikona(match.west.shikona) ||
-                            match.west.shikonaEn ||
-                            String(match.west.rikishiId),
-                          shikonaEn: match.west.shikonaEn,
-                          rank: match.west.rank,
+                            getDisplayShikona(leftSide.shikona) ||
+                            leftSide.shikonaEn ||
+                            String(leftSide.rikishiId),
+                          shikonaEn: leftSide.shikonaEn,
+                          rank: leftSide.rank,
                           division: torikumi.division,
                         });
                       }}
                       title={
-                        match.west?.shikonaEn
-                          ? `${westFavorite ? "Remove favorite" : "Add favorite"}: ${match.west.shikonaEn}`
-                          : westFavorite
+                        leftSide?.shikonaEn
+                          ? `${leftFavorite ? "Remove favorite" : "Add favorite"}: ${leftSide.shikonaEn}`
+                          : leftFavorite
                             ? "Remove favorite"
                             : "Add favorite"
                       }
                     />
                     <WinnerMark
-                      active={match.west?.win}
-                      kinboshi={westKinboshi}
+                      active={leftSide?.win}
+                      kinboshi={leftKinboshi}
                       showResults={showResults}
                     />
                     <div className="w-[10rem] overflow-hidden sm:w-[12.5rem]">
@@ -668,40 +701,40 @@ export function TorikumiBoard({
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          if (match.west?.rikishiId) {
-                            onSelectRikishi(match.west.rikishiId);
+                          if (leftSide?.rikishiId) {
+                            onSelectRikishi(leftSide.rikishiId);
                           }
                         }}
                         className="block w-full text-left"
-                        title={match.west?.shikonaEn ? `Open rikishi details: ${match.west.shikonaEn}` : "Open rikishi details"}
+                        title={leftSide?.shikonaEn ? `Open rikishi details: ${leftSide.shikonaEn}` : "Open rikishi details"}
                       >
                         <VerticalName
-                          primary={getVisibleShikona(match.west?.shikona, match.west?.shikonaEn, nameMode)}
-                          secondary={match.west?.shikonaEn}
-                          emphasized={showResults && !!match.west?.win}
+                          primary={getVisibleShikona(leftSide?.shikona, leftSide?.shikonaEn, nameMode)}
+                          secondary={leftSide?.shikonaEn}
+                          emphasized={showResults && !!leftSide?.win}
                         />
                       </button>
                     </div>
                     <RecordSlot
                       align="right"
                       showResults={showResults}
-                      recordLabel={westRecordLabel}
+                      recordLabel={leftRecordLabel}
                     />
                   </div>
 
                   <div className="flex flex-col items-center gap-1 text-center">
-                    <div className="flex items-center gap-3 text-[14px] text-[color:var(--ink-soft)]">
-                      <span className="max-w-28 truncate text-right" title={match.west?.rank}>
-                        {formatRankLabel(match.west?.rank)}
+                    <div className="flex w-full min-w-[13rem] items-center justify-center gap-3 text-[12px] text-[color:var(--ink-soft)] sm:min-w-[17rem]">
+                      <span className="min-w-0 flex-1 truncate text-right" title={leftSide?.rank}>
+                        {formatRankLabel(leftSide?.rank)}
                       </span>
                       <span
-                        className="fine-label data-sans text-[13px] uppercase text-[color:var(--ink-soft)]"
+                        className="fine-label data-sans shrink-0 text-[13px] uppercase text-[color:var(--ink-soft)]"
                         title="Bout number"
                       >
                         {String(match.matchNo ?? index + 1).padStart(2, "0")}
                       </span>
-                      <span className="max-w-28 truncate text-left" title={match.east?.rank}>
-                        {formatRankLabel(match.east?.rank)}
+                      <span className="min-w-0 flex-1 truncate text-left" title={rightSide?.rank}>
+                        {formatRankLabel(rightSide?.rank)}
                       </span>
                     </div>
                     <div
@@ -712,12 +745,12 @@ export function TorikumiBoard({
                     </div>
                     <div className="flex w-full justify-between">
                       <MatchIdentityDebug
-                        id={match.west?.rikishiId}
-                        matchedById={match.west?.matchedById}
+                        id={leftSide?.rikishiId}
+                        matchedById={leftSide?.matchedById}
                       />
                       <MatchIdentityDebug
-                        id={match.east?.rikishiId}
-                        matchedById={match.east?.matchedById}
+                        id={rightSide?.rikishiId}
+                        matchedById={rightSide?.matchedById}
                       />
                     </div>
                   </div>
@@ -726,55 +759,55 @@ export function TorikumiBoard({
                     <RecordSlot
                       align="left"
                       showResults={showResults}
-                      recordLabel={eastRecordLabel}
+                      recordLabel={rightRecordLabel}
                     />
                     <div className="w-[10rem] overflow-hidden sm:w-[12.5rem]">
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          if (match.east?.rikishiId) {
-                            onSelectRikishi(match.east.rikishiId);
+                          if (rightSide?.rikishiId) {
+                            onSelectRikishi(rightSide.rikishiId);
                           }
                         }}
                         className="block w-full text-right"
-                        title={match.east?.shikonaEn ? `Open rikishi details: ${match.east.shikonaEn}` : "Open rikishi details"}
+                        title={rightSide?.shikonaEn ? `Open rikishi details: ${rightSide.shikonaEn}` : "Open rikishi details"}
                       >
                         <VerticalName
-                          primary={getVisibleShikona(match.east?.shikona, match.east?.shikonaEn, nameMode)}
-                          secondary={match.east?.shikonaEn}
-                          emphasized={showResults && !!match.east?.win}
+                          primary={getVisibleShikona(rightSide?.shikona, rightSide?.shikonaEn, nameMode)}
+                          secondary={rightSide?.shikonaEn}
+                          emphasized={showResults && !!rightSide?.win}
                           reverse
                         />
                       </button>
                     </div>
                     <WinnerMark
-                      active={match.east?.win}
-                      kinboshi={eastKinboshi}
+                      active={rightSide?.win}
+                      kinboshi={rightKinboshi}
                       showResults={showResults}
                     />
                     <TorikumiFavoriteButton
-                      active={eastFavorite}
+                      active={rightFavorite}
                       onClick={() => {
-                        if (!match.east?.rikishiId) {
+                        if (!rightSide?.rikishiId) {
                           return;
                         }
 
                         onToggleFavorite({
-                          id: match.east.rikishiId,
+                          id: rightSide.rikishiId,
                           shikona:
-                            getDisplayShikona(match.east.shikona) ||
-                            match.east.shikonaEn ||
-                            String(match.east.rikishiId),
-                          shikonaEn: match.east.shikonaEn,
-                          rank: match.east.rank,
+                            getDisplayShikona(rightSide.shikona) ||
+                            rightSide.shikonaEn ||
+                            String(rightSide.rikishiId),
+                          shikonaEn: rightSide.shikonaEn,
+                          rank: rightSide.rank,
                           division: torikumi.division,
                         });
                       }}
                       title={
-                        match.east?.shikonaEn
-                          ? `${eastFavorite ? "Remove favorite" : "Add favorite"}: ${match.east.shikonaEn}`
-                          : eastFavorite
+                        rightSide?.shikonaEn
+                          ? `${rightFavorite ? "Remove favorite" : "Add favorite"}: ${rightSide.shikonaEn}`
+                          : rightFavorite
                             ? "Remove favorite"
                             : "Add favorite"
                       }

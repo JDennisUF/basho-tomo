@@ -110,6 +110,9 @@ function HydratedAppShell() {
   const [torikumiNameMode, setTorikumiNameMode] = useState<"jp" | "en">(() =>
     readPreference<"jp" | "en">("torikumi-name-mode", "jp"),
   );
+  const [swapTorikumiSides, setSwapTorikumiSides] = useState<boolean>(() =>
+    readPreference<boolean>("swap-torikumi-sides", false),
+  );
   const [dayOverride, setDayOverride] = useState<number | null>(null);
   const [basho, setBasho] = useState<BashoSummary | null>(null);
   const [banzukeMap, setBanzukeMap] = useState<Record<Division, BanzukeResponse | null>>(
@@ -149,6 +152,10 @@ function HydratedAppShell() {
   useEffect(() => {
     writePreference("torikumi-name-mode", torikumiNameMode);
   }, [torikumiNameMode]);
+
+  useEffect(() => {
+    writePreference("swap-torikumi-sides", swapTorikumiSides);
+  }, [swapTorikumiSides]);
 
   useEffect(() => {
     writePreference("show-leaders", showLeaders);
@@ -666,11 +673,13 @@ function HydratedAppShell() {
               isLoading={isLoadingTorikumi}
               error={torikumiError}
               nameMode={torikumiNameMode}
+              swapSides={swapTorikumiSides}
               favoriteIds={favoriteIds}
               currentRecordMap={currentRecordMap}
               showResults={showResults}
               onSelectRikishi={setSelectedRikishiId}
               onToggleFavorite={toggleFavorite}
+              onToggleSwapSides={() => setSwapTorikumiSides((current) => !current)}
               onRefresh={refreshTorikumiNow}
             />
             <BanzukePanel
