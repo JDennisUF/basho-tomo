@@ -126,6 +126,18 @@ function mapRikishiRow(row: RikishiRow): RikishiSummary {
   };
 }
 
+function hasDetailedProfile(row: RikishiRow) {
+  return (
+    row.nsk_id !== null ||
+    row.sumodb_id !== null ||
+    row.birth_date !== null ||
+    row.height !== null ||
+    row.weight !== null ||
+    row.debut !== null ||
+    row.shusshin !== null
+  );
+}
+
 function toRikishiRow(rikishi: RikishiSummary) {
   return {
     id: rikishi.id,
@@ -371,8 +383,9 @@ export async function getCachedRikishi(
   options: CacheOptions = {},
 ): Promise<CacheResult<RikishiSummary>> {
   const supabase = getSupabaseServiceClient();
+  let cachedPartial: RikishiSummary | null = null;
 
-  if (supabase && !options.forceRefresh) {
+  if (supabase) {
     const { data, error } = await supabase
       .from("rikishi")
       .select(
@@ -383,12 +396,31 @@ export async function getCachedRikishi(
 
     logCacheError("read rikishi", error);
 
-    if (data && isFresh(data.fetched_at, RIKISHI_PROFILE_TTL_MS)) {
-      return { data: mapRikishiRow(data), source: "supabase" };
+    if (data) {
+      const mapped = mapRikishiRow(data);
+      cachedPartial = mapped;
+
+      if (
+        !options.forceRefresh &&
+        hasDetailedProfile(data) &&
+        isFresh(data.fetched_at, RIKISHI_PROFILE_TTL_MS)
+      ) {
+        return { data: mapped, source: "supabase" };
+      }
     }
   }
 
-  const fresh = await fetchRikishi(rikishiId);
+  let fresh: RikishiSummary;
+  try {
+    fresh = await fetchRikishi(rikishiId);
+  } catch (error) {
+    if (cachedPartial) {
+      logCacheError("fetch rikishi detail", error);
+      return { data: cachedPartial, source: "supabase" };
+    }
+
+    throw error;
+  }
 
   if (supabase) {
     const { error } = await supabase.from("rikishi").upsert(toRikishiRow(fresh));

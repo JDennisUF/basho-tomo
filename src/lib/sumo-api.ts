@@ -140,7 +140,12 @@ async function getJson(path: string) {
     throw new Error(`Sumo data request failed: ${response.status}`);
   }
 
-  return (await response.json()) as unknown;
+  const body = await response.text();
+  if (!body) {
+    throw new Error(`Sumo data request returned no content: ${response.status}`);
+  }
+
+  return JSON.parse(body) as unknown;
 }
 
 export function getCurrentBashoId(date = new Date()) {
