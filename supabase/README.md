@@ -25,6 +25,28 @@ SUMO_SYNC_SECRET=
 
 `SUPABASE_SERVICE_ROLE_KEY` must stay server-only. Do not expose it through client components or browser bundles.
 
+## Auth Settings
+
+For magic-link auth, configure Supabase Dashboard -> Authentication -> URL Configuration.
+
+Local development:
+
+```text
+Site URL: http://localhost:3000
+Redirect URLs:
+http://localhost:3000/auth/callback
+```
+
+Production:
+
+```text
+Site URL: https://YOUR-VERCEL-DOMAIN
+Redirect URLs:
+https://YOUR-VERCEL-DOMAIN/auth/callback
+```
+
+If you use Vercel preview deployments, add the preview callback URL pattern that matches your project as an additional redirect URL.
+
 ## RLS Model
 
 Shared sumo cache tables are publicly readable and writable only by server-side service-role code:

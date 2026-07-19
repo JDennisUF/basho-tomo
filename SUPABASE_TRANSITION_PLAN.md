@@ -270,6 +270,13 @@ Implementation preference:
 - Use a browser Supabase client only for auth state and user-owned reads/writes.
 - Do not allow browser clients to write shared sumo cache tables.
 
+Initial magic-link setup:
+
+- Browser client: `src/lib/supabase/browser.ts`
+- Server client: `src/lib/supabase/server.ts`
+- Callback route: `/auth/callback`
+- Supabase redirect URL: `https://YOUR-DOMAIN/auth/callback`
+
 ## Publishing Checklist
 
 Recommended hosting:

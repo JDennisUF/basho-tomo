@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AuthPanel } from "@/components/auth-panel";
+import { AuthStatus } from "@/components/auth-status";
 import { BanzukePanel } from "@/components/banzuke-panel";
 import { FavoritesPanel } from "@/components/favorites-panel";
+import { LoginOverlay } from "@/components/login-overlay";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
@@ -132,6 +135,7 @@ function HydratedAppShell() {
     readPreference<boolean>("show-results", true),
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
   const [torikumiError, setTorikumiError] = useState<string | null>(null);
@@ -554,6 +558,7 @@ function HydratedAppShell() {
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h1 className="text-5xl sm:text-7xl" title="Basho Tomo">場所友</h1>
+              <AuthStatus onLogin={() => setShowLogin(true)} />
             </div>
 
             <div className="grid gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_4rem_minmax(0,1fr)_auto]">
@@ -898,10 +903,13 @@ function HydratedAppShell() {
                   </button>
                 </div>
               </label>
+
+              <AuthPanel />
             </div>
           </div>
         </div>
       ) : null}
+      {showLogin ? <LoginOverlay onClose={() => setShowLogin(false)} /> : null}
     </main>
   );
 }
