@@ -49,3 +49,37 @@ Operational tables are service-role only by default:
 ## First Backend Milestone
 
 The first milestone is complete when the browser stops calling Sumo API directly and instead reads through Next.js route handlers backed by these Supabase tables.
+
+## Manual Sync Endpoints
+
+Admin sync endpoints force-refresh Supabase from Sumo API. They require `SUMO_SYNC_SECRET` in either a bearer token or `x-sumo-sync-secret` header.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/basho/202607
+```
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/banzuke/202607
+```
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/torikumi/202607/Makuuchi/7
+```
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/rikishi-index
+```
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/active-basho
+```

@@ -222,6 +222,14 @@ POST /api/admin/sync/active-basho
 
 Protect these routes with `SUMO_SYNC_SECRET` or equivalent server-only auth.
 
+Manual example:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $SUMO_SYNC_SECRET" \
+  http://localhost:3000/api/admin/sync/active-basho
+```
+
 Scheduled jobs should refresh:
 
 - Active basho summary.

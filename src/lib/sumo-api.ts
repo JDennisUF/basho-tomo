@@ -129,14 +129,15 @@ function booleanOrUndefined(value: unknown) {
 }
 
 async function getJson(path: string) {
-  const response = await fetch(`${API_BASE}${path}`, {
+  const baseUrl = typeof window === "undefined" ? API_BASE : "/api";
+  const response = await fetch(`${baseUrl}${path}`, {
     headers: {
       Accept: "application/json",
     },
   });
 
   if (!response.ok) {
-    throw new Error(`Sumo API request failed: ${response.status}`);
+    throw new Error(`Sumo data request failed: ${response.status}`);
   }
 
   return (await response.json()) as unknown;
