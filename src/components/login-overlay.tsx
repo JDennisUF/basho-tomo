@@ -14,9 +14,37 @@ type LoginStatus = {
 
 export function LoginOverlay({ onClose }: LoginOverlayProps) {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
+  const [mode, setMode] = useState<"password" | "magic">("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<LoginStatus | null>(null);
+
+  async function submitPasswordLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail || !password) {
+      setStatus({ tone: "error", message: "メールと合言葉を入力" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setStatus({ tone: "error", message: error.message });
+      return;
+    }
+
+    onClose();
+  }
 
   async function submitMagicLink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,7 +89,7 @@ export function LoginOverlay({ onClose }: LoginOverlayProps) {
               <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Login">
                 認証
               </div>
-              <h2 className="mt-2 text-3xl">ログイン</h2>
+              <h2 className="mt-2 text-3xl" title="Login">ログイン</h2>
             </div>
             <button
               type="button"
@@ -74,9 +102,47 @@ export function LoginOverlay({ onClose }: LoginOverlayProps) {
           </div>
         </div>
 
-        <form className="space-y-4 px-5 py-5 sm:px-6" onSubmit={submitMagicLink}>
+        <div className="px-5 pt-5 sm:px-6">
+          <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("password");
+                setStatus(null);
+              }}
+              className={`rounded-[6px] px-3 py-2 text-base transition ${
+                mode === "password"
+                  ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                  : "text-[color:var(--ink-soft)]"
+              }`}
+              title="Password login"
+            >
+              合言葉
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("magic");
+                setStatus(null);
+              }}
+              className={`rounded-[6px] px-3 py-2 text-base transition ${
+                mode === "magic"
+                  ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                  : "text-[color:var(--ink-soft)]"
+              }`}
+              title="Magic link login"
+            >
+              メール
+            </button>
+          </div>
+        </div>
+
+        <form
+          className="space-y-4 px-5 py-5 sm:px-6"
+          onSubmit={mode === "password" ? submitPasswordLogin : submitMagicLink}
+        >
           <label className="flex flex-col gap-2">
-            <span className="fine-label text-sm text-[color:var(--ink-soft)]" title="Email">
+            <span className="fine-label text-sm text-[color:var(--ink-soft)]" title="Email address">
               メール
             </span>
             <input
@@ -89,13 +155,28 @@ export function LoginOverlay({ onClose }: LoginOverlayProps) {
             />
           </label>
 
+          {mode === "password" ? (
+            <label className="flex flex-col gap-2">
+              <span className="fine-label text-sm text-[color:var(--ink-soft)]" title="Password">
+                合言葉
+              </span>
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
+                autoComplete="current-password"
+              />
+            </label>
+          ) : null}
+
           <button
             type="submit"
             disabled={isSubmitting}
             className="fine-label w-full rounded-[6px] border border-[color:var(--line)] px-3 py-2 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-60"
-            title="Send magic link"
+            title={mode === "password" ? "Log in with password" : "Send magic link by email"}
           >
-            {isSubmitting ? "送信中" : "認証リンク送信"}
+            {isSubmitting ? "処理中" : mode === "password" ? "ログイン" : "認証リンク送信"}
           </button>
 
           {status ? (

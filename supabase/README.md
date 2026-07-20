@@ -47,6 +47,8 @@ https://YOUR-VERCEL-DOMAIN/auth/callback
 
 If you use Vercel preview deployments, add the preview callback URL pattern that matches your project as an additional redirect URL.
 
+Enable email/password auth in Supabase Dashboard -> Authentication -> Providers -> Email. Keep email OTP/magic-link enabled as the bootstrap and recovery path. Signed-in users can set or change their password from the app's account panel.
+
 ## RLS Model
 
 Shared sumo cache tables are publicly readable and writable only by server-side service-role code:
