@@ -7,6 +7,7 @@ import { BanzukePanel } from "@/components/banzuke-panel";
 import { FavoritesPanel } from "@/components/favorites-panel";
 import { LoginOverlay } from "@/components/login-overlay";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
+import { ShikonaStudyPanel } from "@/components/shikona-study-panel";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
 import { DEFAULT_THEME, isThemeId, THEMES, ThemeId } from "@/lib/themes";
@@ -52,6 +53,7 @@ const TORIKUMI_VERSION = "v6-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const CURRENT_BANZUKE_MAX_AGE_MS = 1000 * 60 * 10;
+type AppView = "torikumi" | "shikona";
 
 function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
   return {
@@ -110,6 +112,9 @@ function HydratedAppShell() {
   const [division, setDivision] = useState<Division>(() =>
     readPreference<Division>("division", "Makuuchi"),
   );
+  const [appView, setAppView] = useState<AppView>(() =>
+    readPreference<AppView>("app-view", "torikumi"),
+  );
   const [torikumiNameMode, setTorikumiNameMode] = useState<"jp" | "en">(() =>
     readPreference<"jp" | "en">("torikumi-name-mode", "jp"),
   );
@@ -148,6 +153,10 @@ function HydratedAppShell() {
   useEffect(() => {
     writePreference("division", division);
   }, [division]);
+
+  useEffect(() => {
+    writePreference("app-view", appView);
+  }, [appView]);
 
   useEffect(() => {
     writePreference("favorites", favoriteIds);
@@ -561,7 +570,7 @@ function HydratedAppShell() {
               <AuthStatus onLogin={() => setShowLogin(true)} />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_4rem_minmax(0,1fr)_auto]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_4rem_minmax(0,1fr)_auto]">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -583,6 +592,38 @@ function HydratedAppShell() {
               </label>
 
               <label className="flex flex-col gap-2">
+                <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Screen">
+                  画面
+                </span>
+                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setAppView("torikumi")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      appView === "torikumi"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Torikumi and banzuke"
+                  >
+                    取組
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAppView("shikona")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      appView === "shikona"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Shikona study"
+                  >
+                    四股名
+                  </button>
+                </div>
+              </label>
+
+              <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Division">
                   番付
                 </span>
@@ -599,13 +640,14 @@ function HydratedAppShell() {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-2">
+              <label className={`flex flex-col gap-2 ${appView === "shikona" ? "opacity-45" : ""}`}>
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Day">
                   日目
                 </span>
                 <select
                   value={day}
                   onChange={(event) => setDayOverride(Number(event.target.value))}
+                  disabled={appView === "shikona"}
                   className="w-16 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {Array.from({ length: 15 }, (_, index) => index + 1).map((value) => (
@@ -616,7 +658,7 @@ function HydratedAppShell() {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-2">
+              <label className={`flex flex-col gap-2 ${appView === "shikona" ? "opacity-45" : ""}`}>
                 <span
                   className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
                   title="Show or hide bout results"
@@ -627,6 +669,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setShowResults(true)}
+                    disabled={appView === "shikona"}
                     className={`rounded-[6px] px-3 py-2 text-base transition ${
                       showResults
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
@@ -639,6 +682,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setShowResults(false)}
+                    disabled={appView === "shikona"}
                     className={`rounded-[6px] px-3 py-2 text-base transition ${
                       !showResults
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
@@ -673,26 +717,32 @@ function HydratedAppShell() {
 
         <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_320px] lg:px-6 lg:py-5">
           <div className="space-y-5">
-            <TorikumiBoard
-              torikumi={hydratedTorikumi}
-              isLoading={isLoadingTorikumi}
-              error={torikumiError}
-              nameMode={torikumiNameMode}
-              swapSides={swapTorikumiSides}
-              favoriteIds={favoriteIds}
-              currentRecordMap={currentRecordMap}
-              showResults={showResults}
-              onSelectRikishi={setSelectedRikishiId}
-              onToggleFavorite={toggleFavorite}
-              onToggleSwapSides={() => setSwapTorikumiSides((current) => !current)}
-              onRefresh={refreshTorikumiNow}
-            />
-            <BanzukePanel
-              banzuke={hydratedBanzukeMap[division]}
-              favoriteIds={favoriteIds}
-              nameMode={torikumiNameMode}
-              onToggleFavorite={toggleFavorite}
-            />
+            {appView === "shikona" ? (
+              <ShikonaStudyPanel banzuke={hydratedBanzukeMap[division]} division={division} />
+            ) : (
+              <>
+                <TorikumiBoard
+                  torikumi={hydratedTorikumi}
+                  isLoading={isLoadingTorikumi}
+                  error={torikumiError}
+                  nameMode={torikumiNameMode}
+                  swapSides={swapTorikumiSides}
+                  favoriteIds={favoriteIds}
+                  currentRecordMap={currentRecordMap}
+                  showResults={showResults}
+                  onSelectRikishi={setSelectedRikishiId}
+                  onToggleFavorite={toggleFavorite}
+                  onToggleSwapSides={() => setSwapTorikumiSides((current) => !current)}
+                  onRefresh={refreshTorikumiNow}
+                />
+                <BanzukePanel
+                  banzuke={hydratedBanzukeMap[division]}
+                  favoriteIds={favoriteIds}
+                  nameMode={torikumiNameMode}
+                  onToggleFavorite={toggleFavorite}
+                />
+              </>
+            )}
           </div>
 
           <div className="space-y-5">
