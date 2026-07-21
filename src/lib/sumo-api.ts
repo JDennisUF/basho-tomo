@@ -928,3 +928,11 @@ export function getTorikumiCachePolicy(args: {
 
   return { immutable: false, ttlMs: 1000 * 60 * 60 * 6 };
 }
+
+function hasMatchResult(match: TorikumiMatch) {
+  return Boolean(match.kimarite || match.east?.win === true || match.west?.win === true);
+}
+
+export function hasCompleteTorikumiResults(torikumi: Pick<TorikumiResponse, "matches">) {
+  return torikumi.matches.length > 0 && torikumi.matches.every(hasMatchResult);
+}

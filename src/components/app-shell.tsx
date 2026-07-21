@@ -26,6 +26,7 @@ import {
   getDefaultDay,
   getDivisionLabel,
   getTorikumiCachePolicy,
+  hasCompleteTorikumiResults,
   isPastOrFinishedBasho,
   listRecentBashoIds,
 } from "@/lib/sumo-api";
@@ -49,11 +50,11 @@ const DIVISIONS: Division[] = [
 ];
 const STABLE_VERSION = "v4-banzuke-cache-east-west-shape";
 const BASHO_SUMMARY_VERSION = "v2-basho-summary-cache";
-const TORIKUMI_VERSION = "v6-torikumi-cache";
+const TORIKUMI_VERSION = "v7-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const CURRENT_BANZUKE_MAX_AGE_MS = 1000 * 60 * 10;
-type AppView = "torikumi" | "shikona";
+type AppView = "torikumi" | "banzuke" | "shikona";
 
 function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
   return {
@@ -370,7 +371,7 @@ function HydratedAppShell() {
           ? readCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION)
           : readTimedCache<TorikumiResponse>(cacheKey, TORIKUMI_VERSION, policy.ttlMs);
 
-      if (cached) {
+      if (cached && (!policy.immutable || hasCompleteTorikumiResults(cached))) {
         if (!cancelled) {
           setTorikumi(cached);
           setIsLoadingTorikumi(false);
@@ -595,7 +596,7 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Screen">
                   画面
                 </span>
-                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
                   <button
                     type="button"
                     onClick={() => setAppView("torikumi")}
@@ -604,9 +605,21 @@ function HydratedAppShell() {
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
                     }`}
-                    title="Torikumi and banzuke"
+                    title="Torikumi"
                   >
                     取組
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAppView("banzuke")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      appView === "banzuke"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Banzuke"
+                  >
+                    番付
                   </button>
                   <button
                     type="button"
@@ -640,14 +653,14 @@ function HydratedAppShell() {
                 </select>
               </label>
 
-              <label className={`flex flex-col gap-2 ${appView === "shikona" ? "opacity-45" : ""}`}>
+              <label className={`flex flex-col gap-2 ${appView !== "torikumi" ? "opacity-45" : ""}`}>
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Day">
                   日目
                 </span>
                 <select
                   value={day}
                   onChange={(event) => setDayOverride(Number(event.target.value))}
-                  disabled={appView === "shikona"}
+                  disabled={appView !== "torikumi"}
                   className="w-16 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {Array.from({ length: 15 }, (_, index) => index + 1).map((value) => (
@@ -658,7 +671,7 @@ function HydratedAppShell() {
                 </select>
               </label>
 
-              <label className={`flex flex-col gap-2 ${appView === "shikona" ? "opacity-45" : ""}`}>
+              <label className={`flex flex-col gap-2 ${appView !== "torikumi" ? "opacity-45" : ""}`}>
                 <span
                   className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
                   title="Show or hide bout results"
@@ -669,7 +682,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setShowResults(true)}
-                    disabled={appView === "shikona"}
+                    disabled={appView !== "torikumi"}
                     className={`rounded-[6px] px-3 py-2 text-base transition ${
                       showResults
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
@@ -682,7 +695,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setShowResults(false)}
-                    disabled={appView === "shikona"}
+                    disabled={appView !== "torikumi"}
                     className={`rounded-[6px] px-3 py-2 text-base transition ${
                       !showResults
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
@@ -719,29 +732,28 @@ function HydratedAppShell() {
           <div className="space-y-5">
             {appView === "shikona" ? (
               <ShikonaStudyPanel banzuke={hydratedBanzukeMap[division]} division={division} />
+            ) : appView === "banzuke" ? (
+              <BanzukePanel
+                banzuke={hydratedBanzukeMap[division]}
+                favoriteIds={favoriteIds}
+                nameMode={torikumiNameMode}
+                onToggleFavorite={toggleFavorite}
+              />
             ) : (
-              <>
-                <TorikumiBoard
-                  torikumi={hydratedTorikumi}
-                  isLoading={isLoadingTorikumi}
-                  error={torikumiError}
-                  nameMode={torikumiNameMode}
-                  swapSides={swapTorikumiSides}
-                  favoriteIds={favoriteIds}
-                  currentRecordMap={currentRecordMap}
-                  showResults={showResults}
-                  onSelectRikishi={setSelectedRikishiId}
-                  onToggleFavorite={toggleFavorite}
-                  onToggleSwapSides={() => setSwapTorikumiSides((current) => !current)}
-                  onRefresh={refreshTorikumiNow}
-                />
-                <BanzukePanel
-                  banzuke={hydratedBanzukeMap[division]}
-                  favoriteIds={favoriteIds}
-                  nameMode={torikumiNameMode}
-                  onToggleFavorite={toggleFavorite}
-                />
-              </>
+              <TorikumiBoard
+                torikumi={hydratedTorikumi}
+                isLoading={isLoadingTorikumi}
+                error={torikumiError}
+                nameMode={torikumiNameMode}
+                swapSides={swapTorikumiSides}
+                favoriteIds={favoriteIds}
+                currentRecordMap={currentRecordMap}
+                showResults={showResults}
+                onSelectRikishi={setSelectedRikishiId}
+                onToggleFavorite={toggleFavorite}
+                onToggleSwapSides={() => setSwapTorikumiSides((current) => !current)}
+                onRefresh={refreshTorikumiNow}
+              />
             )}
           </div>
 

@@ -7,6 +7,7 @@ import {
   fetchTorikumi,
   getCurrentBashoId,
   getTorikumiCachePolicy,
+  hasCompleteTorikumiResults,
   isPastOrFinishedBasho,
 } from "@/lib/sumo-api";
 import {
@@ -317,20 +318,28 @@ export async function getCachedTorikumi(
 
     logCacheError("read torikumi", error);
 
-    if (data && (data.immutable || policy.immutable || isFresh(data.fetched_at, policy.ttlMs))) {
-      return {
-        data: {
-          bashoId,
-          division,
-          day,
-          matches: data.matches,
-        },
-        source: "supabase",
+    if (data) {
+      const cached = {
+        bashoId,
+        division,
+        day,
+        matches: data.matches,
       };
+      const complete = hasCompleteTorikumiResults(cached);
+      const canUseImmutableCache = complete && (data.immutable || policy.immutable);
+      const canUseTimedCache = !policy.immutable && isFresh(data.fetched_at, policy.ttlMs);
+
+      if (canUseImmutableCache || canUseTimedCache) {
+        return {
+          data: cached,
+          source: "supabase",
+        };
+      }
     }
   }
 
   const fresh = await fetchTorikumi(bashoId, division, day);
+  const immutable = policy.immutable && hasCompleteTorikumiResults(fresh);
 
   if (supabase) {
     const { error } = await supabase.from("torikumi").upsert({
@@ -338,7 +347,7 @@ export async function getCachedTorikumi(
       division,
       day,
       matches: fresh.matches,
-      immutable: policy.immutable,
+      immutable,
       fetched_at: new Date().toISOString(),
     });
     logCacheError("write torikumi", error);

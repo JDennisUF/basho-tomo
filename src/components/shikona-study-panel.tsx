@@ -114,26 +114,24 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
                 key={entry.id}
                 className="bg-[color:var(--panel)] px-4 py-4 sm:px-5"
               >
-                <div className="flex items-start justify-between gap-4 border-b border-[color:var(--section-inner-line)] pb-3">
+                <div className="border-b border-[color:var(--section-inner-line)] pb-3">
                   <div className="min-w-0">
-                    <h3
-                      className="truncate text-2xl leading-[1.2]"
-                      title={entry.shikonaEn ?? entry.shikonaJp}
-                    >
-                      {entry.shikonaEn ?? entry.shikonaJp}
-                    </h3>
+                    {entry.shikonaEn ? (
+                      <h3
+                        className="truncate pb-1 text-2xl leading-[1.35]"
+                        title={entry.shikonaEn}
+                      >
+                        {entry.shikonaEn}
+                      </h3>
+                    ) : null}
                     <div
-                      className="data-sans mt-1 truncate text-[13px] text-[color:var(--ink-soft)]"
+                      className={`data-sans truncate text-[13px] text-[color:var(--ink-soft)] ${
+                        entry.shikonaEn ? "mt-1" : ""
+                      }`}
                       title={entry.rank}
                     >
                       {formatRankLabel(entry.rank) || getDivisionLabel(division)}
                     </div>
-                  </div>
-                  <div
-                    className="shrink-0 text-3xl leading-none [writing-mode:vertical-rl]"
-                    title={entry.shikonaJp}
-                  >
-                    {entry.shikonaJp}
                   </div>
                 </div>
 
