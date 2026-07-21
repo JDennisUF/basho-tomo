@@ -114,7 +114,7 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
                 key={entry.id}
                 className="bg-[color:var(--panel)] px-4 py-4 sm:px-5"
               >
-                <div className="border-b border-[color:var(--section-inner-line)] pb-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
                   <div className="min-w-0">
                     {entry.shikonaEn ? (
                       <h3
@@ -133,23 +133,19 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
                       {formatRankLabel(entry.rank) || getDivisionLabel(division)}
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex items-start gap-3">
                   <div
-                    className="grid shrink-0 gap-2 text-center text-3xl leading-none"
+                    className="grid shrink-0 gap-2"
                     aria-label={`${entry.shikonaJp} characters`}
                   >
                     {characters.map((character, index) => (
-                      <span key={`${entry.id}-${character}-${index}`}>{character}</span>
-                    ))}
-                  </div>
-                  <div className="grid min-w-0 gap-2">
-                    {characters.map((character, index) => (
-                      <CharacterLink
-                        key={`${entry.id}-${character}-meaning-${index}`}
-                        character={character}
-                      />
+                      <div
+                        key={`${entry.id}-${character}-${index}`}
+                        className="grid grid-cols-[2rem_minmax(5.75rem,auto)] items-center gap-2"
+                      >
+                        <span className="text-center text-3xl leading-none">{character}</span>
+                        <CharacterLink character={character} />
+                      </div>
                     ))}
                   </div>
                 </div>
