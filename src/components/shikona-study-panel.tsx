@@ -3,9 +3,8 @@
 import { BanzukeResponse, Division } from "@/lib/types";
 import { formatRankLabel, getDisplayShikona, getDivisionLabel } from "@/lib/sumo-api";
 import {
-  getCharacterDictionaryUrl,
-  getCharacterStudyLabel,
-  splitJapaneseName,
+  getShikonaStudyUnits,
+  ShikonaStudyUnit,
 } from "@/lib/shikona-characters";
 
 type ShikonaStudyPanelProps = {
@@ -52,18 +51,16 @@ function getStudyRikishi(banzuke: BanzukeResponse | null) {
   return entries;
 }
 
-function CharacterLink({ character }: { character: string }) {
-  const label = getCharacterStudyLabel(character);
-
+function StudyLink({ unit }: { unit: ShikonaStudyUnit }) {
   return (
     <a
-      href={getCharacterDictionaryUrl(character)}
+      href={unit.dictionaryUrl}
       target="_blank"
       rel="noreferrer"
       className="data-sans inline-flex min-h-8 min-w-[5.75rem] items-center justify-center rounded-[6px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-2 text-center text-[12px] leading-tight text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
-      title={`Open dictionary entry for ${character}`}
+      title={`Open dictionary entry for ${unit.text}`}
     >
-      {label}
+      {unit.label}
     </a>
   );
 }
@@ -107,7 +104,7 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
       ) : (
         <div className="grid gap-px bg-[color:var(--line)] sm:grid-cols-2 xl:grid-cols-3">
           {rikishi.map((entry) => {
-            const characters = splitJapaneseName(entry.shikonaJp);
+            const units = getShikonaStudyUnits(entry.shikonaJp);
 
             return (
               <article
@@ -134,20 +131,24 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
                     </div>
                   </div>
 
-                  <div
-                    className="grid shrink-0 gap-2"
-                    aria-label={`${entry.shikonaJp} characters`}
-                  >
-                    {characters.map((character, index) => (
-                      <div
-                        key={`${entry.id}-${character}-${index}`}
-                        className="grid grid-cols-[2rem_minmax(5.75rem,auto)] items-center gap-2"
-                      >
-                        <span className="text-center text-3xl leading-none">{character}</span>
-                        <CharacterLink character={character} />
-                      </div>
-                    ))}
+                  <div className="shrink-0 text-right text-3xl leading-[1.25]" title={entry.shikonaJp}>
+                    {entry.shikonaJp}
                   </div>
+                </div>
+
+                <div
+                  className="mt-3 grid gap-2 border-t border-[color:var(--section-inner-line)] pt-3"
+                  aria-label={`${entry.shikonaJp} meanings`}
+                >
+                  {units.map((unit, index) => (
+                    <div
+                      key={`${entry.id}-${unit.text}-${index}`}
+                      className="grid grid-cols-[minmax(2rem,auto)_minmax(5.75rem,auto)] items-center justify-start gap-2"
+                    >
+                      <span className="text-center text-3xl leading-none">{unit.text}</span>
+                      <StudyLink unit={unit} />
+                    </div>
+                  ))}
                 </div>
               </article>
             );
