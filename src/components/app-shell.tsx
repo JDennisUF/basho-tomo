@@ -583,7 +583,7 @@ function HydratedAppShell() {
               <AuthStatus onLogin={() => setShowLogin(true)} />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_9rem_4rem_auto_auto]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_10rem_4rem_auto_auto]">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所

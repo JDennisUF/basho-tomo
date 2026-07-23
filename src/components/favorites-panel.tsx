@@ -191,7 +191,7 @@ export function FavoritesPanel({
                       <button
                         type="button"
                         onClick={() => onToggle(rikishi)}
-                        className={`fine-label shrink-0 rounded-full border px-3 py-1 text-xs transition ${
+                        className={`fine-label inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-sm leading-none transition ${
                           active
                             ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                             : "border-[color:var(--line)] text-[color:var(--ink-soft)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
@@ -203,8 +203,9 @@ export function FavoritesPanel({
                               ? "Remove favorite"
                               : "Add favorite"
                         }
+                        aria-pressed={active}
                       >
-                        {active ? "登録済" : "加える"}
+                        ♡
                       </button>
                     </li>
                   );

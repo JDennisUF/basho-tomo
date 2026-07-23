@@ -42,7 +42,7 @@ function FavoriteButton({
           : "border-[color:var(--line)] text-[color:var(--ink-soft)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
       }`}
     >
-      贔屓
+      ♡
     </button>
   );
 }

@@ -58,7 +58,7 @@ function getOpponentResultLabel(result?: string, kinboshi = false) {
     case "absent":
       return "休";
     default:
-      return "予定";
+      return "";
   }
 }
 
@@ -75,7 +75,7 @@ function getOpponentResultClass(result?: string, kinboshi = false) {
     case "absent":
       return "border-[color:var(--line-strong)] bg-transparent text-[color:var(--ink-soft)]";
     default:
-      return "border-[color:var(--line-strong)] bg-transparent text-[color:var(--ink-soft)]";
+      return "border-[color:var(--line-strong)] bg-[color:var(--line)] text-transparent";
   }
 }
 
@@ -83,8 +83,32 @@ function formatCentimeters(value?: number) {
   return value === undefined ? "未詳" : `${value} cm`;
 }
 
+function formatHeightImperial(value?: number) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const totalInches = value / 2.54;
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches - feet * 12);
+
+  if (inches === 12) {
+    return `${feet + 1}' 0"`;
+  }
+
+  return `${feet}' ${inches}"`;
+}
+
 function formatKilograms(value?: number) {
   return value === undefined ? "未詳" : `${value} kg`;
+}
+
+function formatWeightImperial(value?: number) {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return `${Math.round(value * 2.2046226218)} lbs`;
 }
 
 function formatDebut(value?: string) {
@@ -274,7 +298,10 @@ export function RikishiOverlay({
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Height">
                     身長
                   </dt>
-                  <dd className="data-sans text-right text-lg">
+                  <dd
+                    className="data-sans text-right text-lg"
+                    title={formatHeightImperial(rikishiDetail.height)}
+                  >
                     {formatCentimeters(rikishiDetail.height)}
                   </dd>
                 </div>
@@ -282,7 +309,10 @@ export function RikishiOverlay({
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Weight">
                     体重
                   </dt>
-                  <dd className="data-sans text-right text-lg">
+                  <dd
+                    className="data-sans text-right text-lg"
+                    title={formatWeightImperial(rikishiDetail.weight)}
+                  >
                     {formatKilograms(rikishiDetail.weight)}
                   </dd>
                 </div>

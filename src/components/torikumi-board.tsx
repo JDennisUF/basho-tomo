@@ -89,11 +89,19 @@ function WinnerMark({
   return (
     <span
       className={`${slotClass} rounded-full border ${
-        active
+        active === true
           ? "border-[color:var(--ink)] bg-white"
-          : "border-[color:var(--ink)] bg-[color:var(--loss-mark)]"
+          : active === false
+            ? "border-[color:var(--ink)] bg-[color:var(--loss-mark)]"
+            : "border-[color:var(--line-strong)] bg-[color:var(--line)]"
       }`}
-      title={active ? "Winner: white circle" : "Loser: black circle"}
+      title={
+        active === true
+          ? "Winner: white circle"
+          : active === false
+            ? "Loser: black circle"
+            : "Scheduled: result not yet available"
+      }
     />
   );
 }
@@ -166,7 +174,7 @@ function TorikumiFavoriteButton({
       title={title}
       aria-pressed={active}
     >
-      贔
+      ♡
     </button>
   );
 }
