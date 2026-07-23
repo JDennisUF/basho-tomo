@@ -13,6 +13,7 @@ export function useAuthState() {
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [session, setSession] = useState<Session | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [requiresAccountSetup, setRequiresAccountSetup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useAuthState() {
 
       if (!nextSession?.user.id) {
         setDisplayName(null);
+        setRequiresAccountSetup(false);
         setIsLoading(false);
         return;
       }
@@ -35,6 +37,7 @@ export function useAuthState() {
 
       if (isCurrent) {
         setDisplayName(data?.display_name?.trim() || null);
+        setRequiresAccountSetup(!nextSession.user.user_metadata?.password_setup_completed_at);
         setIsLoading(false);
       }
     }
@@ -66,6 +69,7 @@ export function useAuthState() {
     displayName,
     email: session?.user.email ?? null,
     isLoading,
+    requiresAccountSetup,
     session,
     supabase,
   };

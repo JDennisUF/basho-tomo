@@ -132,7 +132,7 @@ export function LoginOverlay({ onClose }: LoginOverlayProps) {
               }`}
               title="Magic link login"
             >
-              メール
+              初回メール
             </button>
           </div>
         </div>
@@ -168,7 +168,11 @@ export function LoginOverlay({ onClose }: LoginOverlayProps) {
                 autoComplete="current-password"
               />
             </label>
-          ) : null}
+          ) : (
+            <p className="text-sm text-[color:var(--ink-soft)]">
+              Use the email link the first time. After setup, sign in with email and password.
+            </p>
+          )}
 
           <button
             type="submit"

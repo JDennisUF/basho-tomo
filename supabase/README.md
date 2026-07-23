@@ -47,7 +47,7 @@ https://YOUR-VERCEL-DOMAIN/auth/callback
 
 If you use Vercel preview deployments, add the preview callback URL pattern that matches your project as an additional redirect URL.
 
-Enable email/password auth in Supabase Dashboard -> Authentication -> Providers -> Email. Keep email OTP/magic-link enabled as the bootstrap and recovery path. Signed-in users can set or change their password from the app's account panel.
+Enable email/password auth in Supabase Dashboard -> Authentication -> Providers -> Email. Keep email OTP/magic-link enabled as the bootstrap path. On the first successful magic-link login, the app now requires the user to set a password before continuing. After that, the normal sign-in path is email plus password, while magic link remains available only as a fallback path unless you add a stricter server-side gate in front of OTP issuance.
 
 ## RLS Model
 

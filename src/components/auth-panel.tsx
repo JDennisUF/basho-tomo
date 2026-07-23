@@ -10,7 +10,7 @@ type AuthPanelStatus = {
 };
 
 export function AuthPanel() {
-  const { displayName, email, session, supabase } = useAuthState();
+  const { displayName, email, requiresAccountSetup, session, supabase } = useAuthState();
   const [nicknameDraft, setNicknameDraft] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -66,17 +66,24 @@ export function AuthPanel() {
     setIsSubmitting(true);
     setStatus(null);
 
-    const { error } = await supabase.auth.updateUser({ password });
-
-    setIsSubmitting(false);
+    const { error } = await supabase.auth.updateUser({
+      password,
+      data: {
+        password_setup_completed_at: new Date().toISOString(),
+      },
+    });
 
     if (error) {
+      setIsSubmitting(false);
       setStatus({ tone: "error", message: error.message });
       return;
     }
 
+    setIsSubmitting(false);
+
     setPassword("");
     setPasswordConfirm("");
+    window.dispatchEvent(new CustomEvent(AUTH_PROFILE_UPDATED_EVENT));
     setStatus({ tone: "success", message: "合言葉保存済み" });
   }
 
@@ -121,6 +128,11 @@ export function AuthPanel() {
           </button>
         </form>
         <form className="space-y-3 border-t border-[color:var(--line)] pt-4" onSubmit={savePassword}>
+          {requiresAccountSetup ? (
+            <p className="text-sm text-[color:var(--accent)]">
+              初回ログインの設定は上の確認画面で完了してください。
+            </p>
+          ) : null}
           <label className="flex flex-col gap-2">
             <span className="fine-label text-xs text-[color:var(--ink-soft)]" title="Password">
               合言葉
@@ -147,7 +159,7 @@ export function AuthPanel() {
           </label>
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || requiresAccountSetup}
             className="fine-label w-full rounded-[6px] border border-[color:var(--line)] px-3 py-2 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-60"
             title="Save password"
           >

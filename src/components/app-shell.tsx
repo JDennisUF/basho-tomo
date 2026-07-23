@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { AccountSetupOverlay } from "@/components/account-setup-overlay";
 import { AuthPanel } from "@/components/auth-panel";
 import { AuthStatus } from "@/components/auth-status";
 import { BanzukePanel } from "@/components/banzuke-panel";
@@ -8,6 +9,7 @@ import { FavoritesPanel } from "@/components/favorites-panel";
 import { LoginOverlay } from "@/components/login-overlay";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
 import { ShikonaStudyPanel } from "@/components/shikona-study-panel";
+import { SumoTermsPanel } from "@/components/sumo-terms-panel";
 import { TorikumiBoard } from "@/components/torikumi-board";
 import { readCache, readPreference, readTimedCache, writeCache, writePreference } from "@/lib/cache";
 import { DEFAULT_THEME, isThemeId, THEMES, ThemeId } from "@/lib/themes";
@@ -54,7 +56,7 @@ const TORIKUMI_VERSION = "v7-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const CURRENT_BANZUKE_MAX_AGE_MS = 1000 * 60 * 10;
-type AppView = "torikumi" | "banzuke" | "shikona";
+type AppView = "torikumi" | "banzuke" | "kanji" | "terms";
 
 function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
   return {
@@ -596,7 +598,7 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Screen">
                   画面
                 </span>
-                <div className="grid grid-cols-3 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <div className="grid grid-cols-4 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
                   <button
                     type="button"
                     onClick={() => setAppView("torikumi")}
@@ -623,15 +625,27 @@ function HydratedAppShell() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAppView("shikona")}
+                    onClick={() => setAppView("kanji")}
                     className={`rounded-[6px] px-3 py-2 text-base transition ${
-                      appView === "shikona"
+                      appView === "kanji"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
                     }`}
-                    title="Shikona study"
+                    title="Kanji study"
                   >
-                    四股名
+                    漢字
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAppView("terms")}
+                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                      appView === "terms"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Sumo terms"
+                  >
+                    用語
                   </button>
                 </div>
               </label>
@@ -730,8 +744,10 @@ function HydratedAppShell() {
 
         <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_320px] lg:px-6 lg:py-5">
           <div className="space-y-5">
-            {appView === "shikona" ? (
+            {appView === "kanji" ? (
               <ShikonaStudyPanel banzuke={hydratedBanzukeMap[division]} division={division} />
+            ) : appView === "terms" ? (
+              <SumoTermsPanel />
             ) : appView === "banzuke" ? (
               <BanzukePanel
                 banzuke={hydratedBanzukeMap[division]}
@@ -971,6 +987,7 @@ function HydratedAppShell() {
           </div>
         </div>
       ) : null}
+      <AccountSetupOverlay />
       {showLogin ? <LoginOverlay onClose={() => setShowLogin(false)} /> : null}
     </main>
   );

@@ -74,9 +74,9 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
         <div className="section-accent" />
         <div
           className="fine-label text-xs text-[color:var(--ink-soft)]"
-          title="Loading shikona study"
+          title="Loading kanji study"
         >
-          四股名 読込中
+          漢字 読込中
         </div>
       </section>
     );
@@ -87,10 +87,13 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
       <div className="section-accent" />
       <div className="flex flex-col gap-2 border-b border-[color:var(--line)] px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
         <div>
-          <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Shikona study">
-            四股名
+          <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Kanji study">
+            漢字
           </div>
-          <h2 className="mt-1 text-3xl">{getDivisionLabel(division)}</h2>
+          <h2 className="mt-1 text-3xl">Kanji Study</h2>
+          <p className="data-sans mt-1 text-sm text-[color:var(--ink-soft)]">
+            {getDivisionLabel(division)}
+          </p>
         </div>
         <div className="data-sans text-sm text-[color:var(--ink-soft)]" title="Rikishi in division">
           {rikishi.length} rikishi
@@ -138,7 +141,7 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
 
                 <div
                   className="mt-3 grid gap-2 border-t border-[color:var(--section-inner-line)] pt-3"
-                  aria-label={`${entry.shikonaJp} meanings`}
+                  aria-label={`${entry.shikonaJp} kanji meanings`}
                 >
                   {units.map((unit, index) => (
                     <div
