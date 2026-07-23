@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { BanzukeResponse, Division } from "@/lib/types";
 import { formatRankLabel, getDisplayShikona, getDivisionLabel } from "@/lib/sumo-api";
 import {
@@ -67,6 +68,19 @@ function StudyLink({ unit }: { unit: ShikonaStudyUnit }) {
 
 export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps) {
   const rikishi = getStudyRikishi(banzuke);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredRikishi = useMemo(() => {
+    if (!normalizedQuery) {
+      return rikishi;
+    }
+
+    return rikishi.filter((entry) => {
+      const jp = entry.shikonaJp.toLowerCase();
+      const en = (entry.shikonaEn ?? "").toLowerCase();
+      return jp.includes(normalizedQuery) || en.includes(normalizedQuery);
+    });
+  }, [normalizedQuery, rikishi]);
 
   if (!banzuke) {
     return (
@@ -74,9 +88,9 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
         <div className="section-accent" />
         <div
           className="fine-label text-xs text-[color:var(--ink-soft)]"
-          title="Loading kanji study"
+          title="Loading shikona study"
         >
-          漢字 読込中
+          四股名 読込中
         </div>
       </section>
     );
@@ -87,26 +101,34 @@ export function ShikonaStudyPanel({ banzuke, division }: ShikonaStudyPanelProps)
       <div className="section-accent" />
       <div className="flex flex-col gap-2 border-b border-[color:var(--line)] px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
         <div>
-          <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Kanji study">
-            漢字
+          <div className="fine-label text-sm text-[color:var(--ink-soft)]" title="Shikona study">
+            四股名
           </div>
-          <h2 className="mt-1 text-3xl">Kanji Study</h2>
+          <h2 className="mt-1 text-3xl">Shikona Study</h2>
           <p className="data-sans mt-1 text-sm text-[color:var(--ink-soft)]">
             {getDivisionLabel(division)}
           </p>
         </div>
-        <div className="data-sans text-sm text-[color:var(--ink-soft)]" title="Rikishi in division">
-          {rikishi.length} rikishi
+        <div className="flex w-full max-w-xs flex-col gap-2 sm:items-end">
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="四股名 / shikona"
+            className="data-sans w-full rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base outline-none placeholder:text-[color:var(--ink-soft)]/70 focus:border-[color:var(--accent)]"
+          />
+          <div className="data-sans text-sm text-[color:var(--ink-soft)]" title="Rikishi in division">
+            {filteredRikishi.length} rikishi
+          </div>
         </div>
       </div>
 
-      {rikishi.length === 0 ? (
+      {filteredRikishi.length === 0 ? (
         <p className="px-4 py-5 text-sm text-[color:var(--ink-soft)] sm:px-5" title="No shikona available">
-          記録なし
+          {normalizedQuery ? "一致なし" : "記録なし"}
         </p>
       ) : (
         <div className="grid gap-px bg-[color:var(--line)] sm:grid-cols-2 xl:grid-cols-3">
-          {rikishi.map((entry) => {
+          {filteredRikishi.map((entry) => {
             const units = getShikonaStudyUnits(entry.shikonaJp);
 
             return (

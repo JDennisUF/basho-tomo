@@ -8,6 +8,7 @@ import { BanzukePanel } from "@/components/banzuke-panel";
 import { FavoritesPanel } from "@/components/favorites-panel";
 import { LoginOverlay } from "@/components/login-overlay";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
+import { ShikonaSearchPanel } from "@/components/shikona-search-panel";
 import { ShikonaStudyPanel } from "@/components/shikona-study-panel";
 import { SumoTermsPanel } from "@/components/sumo-terms-panel";
 import { TorikumiBoard } from "@/components/torikumi-board";
@@ -56,7 +57,7 @@ const TORIKUMI_VERSION = "v7-torikumi-cache";
 const RIKISHI_INDEX_VERSION = "v2-rikishi-index-cache";
 const CURRENT_BASHO_SUMMARY_MAX_AGE_MS = 1000 * 60 * 60 * 12;
 const CURRENT_BANZUKE_MAX_AGE_MS = 1000 * 60 * 10;
-type AppView = "torikumi" | "banzuke" | "kanji" | "terms";
+type AppView = "torikumi" | "banzuke" | "search" | "kanji" | "terms";
 
 function createEmptyBanzukeMap(): Record<Division, BanzukeResponse | null> {
   return {
@@ -81,6 +82,15 @@ function getEnglishRankTitle(division: Division, rank?: string) {
   return rank.toLowerCase().startsWith(division.toLowerCase())
     ? rank
     : `${division} ${rank}`;
+}
+
+function openTorikumiView(
+  nextDivision: Division,
+  setDivision: (division: Division) => void,
+  setAppView: (view: AppView) => void,
+) {
+  setDivision(nextDivision);
+  setAppView("torikumi");
 }
 
 export function AppShell() {
@@ -569,11 +579,11 @@ function HydratedAppShell() {
         <header className="border-b border-[color:var(--line)] px-5 py-6 sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-5xl sm:text-7xl" title="Basho Tomo">場所友</h1>
+              <h1 className="whitespace-nowrap text-5xl sm:text-7xl" title="Basho Tomo">場所友</h1>
               <AuthStatus onLogin={() => setShowLogin(true)} />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1fr)_4rem_minmax(0,1fr)_auto]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_9rem_4rem_auto_auto]">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -598,7 +608,7 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Screen">
                   画面
                 </span>
-                <div className="grid grid-cols-4 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <div className="grid grid-cols-5 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
                   <button
                     type="button"
                     onClick={() => setAppView("torikumi")}
@@ -631,9 +641,9 @@ function HydratedAppShell() {
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
                     }`}
-                    title="Kanji study"
+                    title="Shikona study"
                   >
-                    漢字
+                    四股名
                   </button>
                   <button
                     type="button"
@@ -647,6 +657,27 @@ function HydratedAppShell() {
                   >
                     用語
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setAppView("search")}
+                    className={`inline-flex items-center justify-center rounded-[6px] px-3 py-2 text-base transition ${
+                      appView === "search"
+                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
+                        : "text-[color:var(--ink-soft)]"
+                    }`}
+                    title="Search shikona"
+                    aria-label="Search shikona"
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none">
+                      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+                      <path
+                        d="M16 16l4 4"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
                 </div>
               </label>
 
@@ -657,7 +688,7 @@ function HydratedAppShell() {
                 <select
                   value={division}
                   onChange={(event) => setDivision(event.target.value as Division)}
-                  className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
+                  className="w-full rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {DIVISIONS.map((item) => (
                     <option key={item} value={item}>
@@ -688,38 +719,45 @@ function HydratedAppShell() {
               <label className={`flex flex-col gap-2 ${appView !== "torikumi" ? "opacity-45" : ""}`}>
                 <span
                   className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]"
-                  title="Show or hide bout results"
+                  title="Hide results"
                 >
                   勝敗
                 </span>
-                <div className="grid grid-cols-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowResults(true)}
+                <label
+                  className={`inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 ${
+                    appView !== "torikumi" ? "cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                  title="Hide bout results"
+                >
+                  <input
+                    type="checkbox"
+                    checked={!showResults}
+                    onChange={(event) => setShowResults(!event.target.checked)}
                     disabled={appView !== "torikumi"}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
-                      showResults
-                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                        : "text-[color:var(--ink-soft)]"
-                    }`}
-                    title="Show bout results"
+                    className="h-4 w-4 accent-[color:var(--accent)]"
+                    aria-label="Hide bout results"
+                  />
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5 shrink-0"
+                    fill="none"
                   >
-                    表示
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowResults(false)}
-                    disabled={appView !== "torikumi"}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
-                      !showResults
-                        ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
-                        : "text-[color:var(--ink-soft)]"
-                    }`}
-                    title="Hide bout results"
-                  >
-                    隠す
-                  </button>
-                </div>
+                    <path
+                      d="M3 12s3.6-5 9-5 9 5 9 5-3.6 5-9 5-9-5-9-5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="12" cy="12" r="2.4" stroke="currentColor" strokeWidth="1.6" />
+                    <path
+                      d="M5 19 19 5"
+                      stroke="#c43b2f"
+                      strokeWidth="2.1"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </label>
               </label>
 
               <div className="flex flex-col gap-2">
@@ -744,7 +782,15 @@ function HydratedAppShell() {
 
         <div className="grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1.7fr)_320px] lg:px-6 lg:py-5">
           <div className="space-y-5">
-            {appView === "kanji" ? (
+            {appView === "search" ? (
+              <ShikonaSearchPanel
+                rikishi={rikishi}
+                onOpenTorikumi={(nextDivision) =>
+                  openTorikumiView(nextDivision, setDivision, setAppView)
+                }
+                onSelectRikishi={setSelectedRikishiId}
+              />
+            ) : appView === "kanji" ? (
               <ShikonaStudyPanel banzuke={hydratedBanzukeMap[division]} division={division} />
             ) : appView === "terms" ? (
               <SumoTermsPanel />
