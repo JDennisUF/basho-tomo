@@ -23,6 +23,16 @@ export function FavoritesPanel({
 }: FavoritesPanelProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const sortedFavorites = useMemo(
+    () =>
+      [...favorites].sort((left, right) =>
+        (left.shikonaEn ?? getDisplayShikona(left.shikona)).localeCompare(
+          right.shikonaEn ?? getDisplayShikona(right.shikona),
+          "en",
+        ),
+      ),
+    [favorites],
+  );
 
   const filteredRikishi = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -85,7 +95,7 @@ export function FavoritesPanel({
           </div>
         </div>
 
-        {favorites.length === 0 ? (
+        {sortedFavorites.length === 0 ? (
           <p
             className="mt-4 text-sm text-[color:var(--ink-soft)]"
             title="No favorites yet. Add rikishi from the banzuke, torikumi, or search here."
@@ -94,7 +104,7 @@ export function FavoritesPanel({
           </p>
         ) : (
           <ul className="mt-4 space-y-2">
-            {favorites.map((rikishi) => (
+            {sortedFavorites.map((rikishi) => (
               <li
                 key={rikishi.id}
                 className="flex items-center justify-between border-b border-[color:var(--line)] pb-2"

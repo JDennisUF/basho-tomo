@@ -9,11 +9,13 @@ type AuthPanelStatus = {
   message: string;
 };
 
-export function AuthPanel() {
+type AuthPanelProps = {
+  onOpenChangePassword: () => void;
+};
+
+export function AuthPanel({ onOpenChangePassword }: AuthPanelProps) {
   const { displayName, email, requiresAccountSetup, session, supabase } = useAuthState();
   const [nicknameDraft, setNicknameDraft] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<AuthPanelStatus | null>(null);
   const nickname = nicknameDraft ?? displayName ?? "";
@@ -44,47 +46,6 @@ export function AuthPanel() {
     setNicknameDraft(normalizedNickname);
     window.dispatchEvent(new CustomEvent(AUTH_PROFILE_UPDATED_EVENT));
     setStatus({ tone: "success", message: "表示名保存済み" });
-  }
-
-  async function savePassword(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!session?.user.id) {
-      return;
-    }
-
-    if (password.length < 8) {
-      setStatus({ tone: "error", message: "合言葉は8文字以上" });
-      return;
-    }
-
-    if (password !== passwordConfirm) {
-      setStatus({ tone: "error", message: "合言葉が一致しません" });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setStatus(null);
-
-    const { error } = await supabase.auth.updateUser({
-      password,
-      data: {
-        password_setup_completed_at: new Date().toISOString(),
-      },
-    });
-
-    if (error) {
-      setIsSubmitting(false);
-      setStatus({ tone: "error", message: error.message });
-      return;
-    }
-
-    setIsSubmitting(false);
-
-    setPassword("");
-    setPasswordConfirm("");
-    window.dispatchEvent(new CustomEvent(AUTH_PROFILE_UPDATED_EVENT));
-    setStatus({ tone: "success", message: "合言葉保存済み" });
   }
 
   if (!email) {
@@ -127,45 +88,22 @@ export function AuthPanel() {
             表示名保存
           </button>
         </form>
-        <form className="space-y-3 border-t border-[color:var(--line)] pt-4" onSubmit={savePassword}>
+        <div className="space-y-3 border-t border-[color:var(--line)] pt-4">
           {requiresAccountSetup ? (
             <p className="text-sm text-[color:var(--accent)]">
               初回ログインの設定は上の確認画面で完了してください。
             </p>
           ) : null}
-          <label className="flex flex-col gap-2">
-            <span className="fine-label text-xs text-[color:var(--ink-soft)]" title="Password">
-              合言葉
-            </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
-              autoComplete="new-password"
-            />
-          </label>
-          <label className="flex flex-col gap-2">
-            <span className="fine-label text-xs text-[color:var(--ink-soft)]" title="Confirm password">
-              合言葉確認
-            </span>
-            <input
-              type="password"
-              value={passwordConfirm}
-              onChange={(event) => setPasswordConfirm(event.target.value)}
-              className="rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
-              autoComplete="new-password"
-            />
-          </label>
           <button
-            type="submit"
-            disabled={isSubmitting || requiresAccountSetup}
+            type="button"
+            onClick={onOpenChangePassword}
+            disabled={requiresAccountSetup}
             className="fine-label w-full rounded-[6px] border border-[color:var(--line)] px-3 py-2 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] disabled:opacity-60"
-            title="Save password"
+            title="Open change password"
           >
-            合言葉保存
+            合言葉変更
           </button>
-        </form>
+        </div>
       </div>
       {status ? (
         <p className={`mt-3 text-sm ${statusClass}`} role={status.tone === "error" ? "alert" : "status"}>

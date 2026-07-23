@@ -125,6 +125,20 @@ function formatDebut(value?: string) {
   return `${year}年${Number(month)}月場所`;
 }
 
+function formatDebutUsDate(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+
+  const match = value.match(/^(\d{4})(\d{2})$/);
+  if (!match) {
+    return undefined;
+  }
+
+  const [, year, month] = match;
+  return `${month}/01/${year}`;
+}
+
 function calculateAge(birthDate?: string, now = new Date()) {
   if (!birthDate) {
     return undefined;
@@ -320,7 +334,10 @@ export function RikishiOverlay({
                   <dt className="text-lg text-[color:var(--ink-soft)]" title="Debut">
                     初土俵
                   </dt>
-                  <dd className="data-sans text-right text-lg">
+                  <dd
+                    className="data-sans text-right text-lg"
+                    title={formatDebutUsDate(rikishiDetail.debut)}
+                  >
                     {formatDebut(rikishiDetail.debut)}
                   </dd>
                 </div>

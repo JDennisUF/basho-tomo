@@ -5,6 +5,7 @@ import { AccountSetupOverlay } from "@/components/account-setup-overlay";
 import { AuthPanel } from "@/components/auth-panel";
 import { AuthStatus } from "@/components/auth-status";
 import { BanzukePanel } from "@/components/banzuke-panel";
+import { ChangePasswordOverlay } from "@/components/change-password-overlay";
 import { FavoritesPanel } from "@/components/favorites-panel";
 import { LoginOverlay } from "@/components/login-overlay";
 import { RikishiOverlay } from "@/components/rikishi-overlay";
@@ -86,10 +87,13 @@ function getEnglishRankTitle(division: Division, rank?: string) {
 
 function openTorikumiView(
   nextDivision: Division,
+  rikishiId: number | null,
   setDivision: (division: Division) => void,
   setAppView: (view: AppView) => void,
+  setFocusedTorikumiRikishiId: (rikishiId: number | null) => void,
 ) {
   setDivision(nextDivision);
+  setFocusedTorikumiRikishiId(rikishiId);
   setAppView("torikumi");
 }
 
@@ -146,6 +150,7 @@ function HydratedAppShell() {
     readPreference<number[]>("favorites", []),
   );
   const [selectedRikishiId, setSelectedRikishiId] = useState<number | null>(null);
+  const [focusedTorikumiRikishiId, setFocusedTorikumiRikishiId] = useState<number | null>(null);
   const [showLeaders, setShowLeaders] = useState<boolean>(() =>
     readPreference<boolean>("show-leaders", true),
   );
@@ -153,6 +158,7 @@ function HydratedAppShell() {
     readPreference<boolean>("show-results", true),
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [torikumiRefreshNonce, setTorikumiRefreshNonce] = useState(0);
   const [isLoadingTorikumi, setIsLoadingTorikumi] = useState(true);
@@ -785,8 +791,14 @@ function HydratedAppShell() {
             {appView === "search" ? (
               <ShikonaSearchPanel
                 rikishi={rikishi}
-                onOpenTorikumi={(nextDivision) =>
-                  openTorikumiView(nextDivision, setDivision, setAppView)
+                onOpenTorikumi={(nextDivision, rikishiId) =>
+                  openTorikumiView(
+                    nextDivision,
+                    rikishiId,
+                    setDivision,
+                    setAppView,
+                    setFocusedTorikumiRikishiId,
+                  )
                 }
                 onSelectRikishi={setSelectedRikishiId}
               />
@@ -810,6 +822,7 @@ function HydratedAppShell() {
                 swapSides={swapTorikumiSides}
                 favoriteIds={favoriteIds}
                 currentRecordMap={currentRecordMap}
+                focusedRikishiId={focusedTorikumiRikishiId}
                 showResults={showResults}
                 onSelectRikishi={setSelectedRikishiId}
                 onToggleFavorite={toggleFavorite}
@@ -1028,12 +1041,15 @@ function HydratedAppShell() {
                 </div>
               </label>
 
-              <AuthPanel />
+              <AuthPanel onOpenChangePassword={() => setShowChangePassword(true)} />
             </div>
           </div>
         </div>
       ) : null}
       <AccountSetupOverlay />
+      {showChangePassword ? (
+        <ChangePasswordOverlay onClose={() => setShowChangePassword(false)} />
+      ) : null}
       {showLogin ? <LoginOverlay onClose={() => setShowLogin(false)} /> : null}
     </main>
   );

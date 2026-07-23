@@ -28,6 +28,7 @@ type TorikumiBoardProps = {
   swapSides: boolean;
   favoriteIds: number[];
   currentRecordMap: Record<number, CurrentBashoRecord>;
+  focusedRikishiId?: number | null;
   showResults: boolean;
   onSelectRikishi: (rikishiId: number) => void;
   onToggleFavorite: (rikishi: RikishiSummary) => void;
@@ -532,6 +533,7 @@ export function TorikumiBoard({
   swapSides,
   favoriteIds,
   currentRecordMap,
+  focusedRikishiId,
   showResults,
   onSelectRikishi,
   onToggleFavorite,
@@ -539,6 +541,22 @@ export function TorikumiBoard({
   onRefresh,
 }: TorikumiBoardProps) {
   const [selectedMatch, setSelectedMatch] = useState<TorikumiMatch | null>(null);
+
+  useEffect(() => {
+    if (!focusedRikishiId || !torikumi) {
+      return;
+    }
+
+    const target = document.querySelector<HTMLElement>(
+      `[data-focused-rikishi-id="${focusedRikishiId}"]`,
+    );
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusedRikishiId, torikumi]);
 
   if (isLoading) {
     return (
@@ -621,6 +639,8 @@ export function TorikumiBoard({
                 ? favoriteIds.includes(rightSide.rikishiId)
                 : false;
               const hasFavorite = leftFavorite || rightFavorite;
+              const isFocusedMatch =
+                leftSide?.rikishiId === focusedRikishiId || rightSide?.rikishiId === focusedRikishiId;
               const hasMatchDetails = !!match.west?.rikishiId && !!match.east?.rikishiId;
               const leftRecord = leftSide?.rikishiId
                 ? currentRecordMap[leftSide.rikishiId]
@@ -654,7 +674,12 @@ export function TorikumiBoard({
               return (
                 <article
                   key={`${match.day ?? torikumi.day}-${match.matchNo ?? index}`}
-                  className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-1 px-4 py-2 transition sm:gap-1.5 sm:px-5 ${
+                  data-focused-rikishi-id={isFocusedMatch ? focusedRikishiId ?? undefined : undefined}
+                  className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-1 border-y px-4 py-2 transition sm:gap-1.5 sm:px-5 ${
+                    isFocusedMatch
+                      ? "border-[color:var(--accent)] bg-[color:var(--accent-soft)]/45 shadow-[inset_0_0_0_1px_var(--accent)]"
+                      : "border-transparent"
+                  } ${
                     hasFavorite ? "bg-[color:var(--accent-soft)]/60" : ""
                   } ${hasMatchDetails ? "cursor-pointer hover:bg-[color:var(--accent-soft)]/40" : ""}`}
                   role={hasMatchDetails ? "button" : undefined}

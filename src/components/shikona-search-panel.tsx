@@ -6,7 +6,7 @@ import { Division, RikishiSummary } from "@/lib/types";
 
 type ShikonaSearchPanelProps = {
   rikishi: RikishiSummary[];
-  onOpenTorikumi: (division: Division) => void;
+  onOpenTorikumi: (division: Division, rikishiId: number) => void;
   onSelectRikishi: (rikishiId: number) => void;
 };
 
@@ -110,7 +110,7 @@ export function ShikonaSearchPanel({
 
                 <button
                   type="button"
-                  onClick={() => onOpenTorikumi(entry.division)}
+                  onClick={() => onOpenTorikumi(entry.division, entry.id)}
                   className="fine-label inline-flex h-10 items-center justify-center rounded-[6px] border border-[color:var(--line)] px-3 text-sm text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
                   title={`Open torikumi for ${entry.division}`}
                 >
