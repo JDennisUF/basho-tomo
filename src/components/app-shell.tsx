@@ -589,7 +589,7 @@ function HydratedAppShell() {
               <AuthStatus onLogin={() => setShowLogin(true)} />
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_10rem_4rem_auto_auto]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,0.58fr)_minmax(0,1fr)_11rem_4rem_auto_auto]">
               <label className="flex flex-col gap-2">
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Basho">
                   場所
@@ -614,11 +614,11 @@ function HydratedAppShell() {
                 <span className="fine-label hover-hint text-sm text-[color:var(--ink-soft)]" title="Screen">
                   画面
                 </span>
-                <div className="grid grid-cols-5 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-1">
+                <div className="grid h-[37px] grid-cols-5 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] p-0.5">
                   <button
                     type="button"
                     onClick={() => setAppView("torikumi")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                    className={`h-full rounded-[6px] px-3 py-0 text-base transition ${
                       appView === "torikumi"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
@@ -630,7 +630,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setAppView("banzuke")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                    className={`h-full rounded-[6px] px-3 py-0 text-base transition ${
                       appView === "banzuke"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
@@ -642,7 +642,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setAppView("kanji")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                    className={`h-full rounded-[6px] px-3 py-0 text-base transition ${
                       appView === "kanji"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
@@ -654,7 +654,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setAppView("terms")}
-                    className={`rounded-[6px] px-3 py-2 text-base transition ${
+                    className={`h-full rounded-[6px] px-3 py-0 text-base transition ${
                       appView === "terms"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
@@ -666,7 +666,7 @@ function HydratedAppShell() {
                   <button
                     type="button"
                     onClick={() => setAppView("search")}
-                    className={`inline-flex items-center justify-center rounded-[6px] px-3 py-2 text-base transition ${
+                    className={`inline-flex h-full items-center justify-center rounded-[6px] px-3 py-0 text-base transition ${
                       appView === "search"
                         ? "bg-[color:var(--accent-soft)] text-[color:var(--accent)]"
                         : "text-[color:var(--ink-soft)]"
@@ -693,7 +693,10 @@ function HydratedAppShell() {
                 </span>
                 <select
                   value={division}
-                  onChange={(event) => setDivision(event.target.value as Division)}
+                  onChange={(event) => {
+                    setFocusedTorikumiRikishiId(null);
+                    setDivision(event.target.value as Division);
+                  }}
                   className="w-full rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 py-2 text-base"
                 >
                   {DIVISIONS.map((item) => (
@@ -730,7 +733,7 @@ function HydratedAppShell() {
                   勝敗
                 </span>
                 <label
-                  className={`inline-flex h-[42px] items-center gap-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 ${
+                  className={`inline-flex h-[37px] items-center gap-2 rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] px-3 ${
                     appView !== "torikumi" ? "cursor-not-allowed" : "cursor-pointer"
                   }`}
                   title="Hide bout results"
@@ -773,7 +776,7 @@ function HydratedAppShell() {
                 <button
                   type="button"
                   onClick={() => setShowSettings(true)}
-                  className="fine-label inline-flex h-[42px] w-[42px] items-center justify-center rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
+                  className="fine-label inline-flex h-[37px] w-[37px] items-center justify-center rounded-[8px] border border-[color:var(--line)] bg-[color:var(--panel-strong)] text-[color:var(--ink-soft)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--accent)]"
                   title="Open settings"
                   aria-label="Open settings"
                 >
@@ -907,7 +910,7 @@ function HydratedAppShell() {
                     return (
                       <li
                         key={entry.rikishiId}
-                        className="grid grid-cols-[1.5rem_minmax(0,1fr)_6.75rem_3.5rem] items-center gap-2 border-b border-[color:var(--line)] py-1.5"
+                        className="grid grid-cols-[1.5rem_minmax(0,1fr)_5.25rem_3.5rem] items-center gap-2 border-b border-[color:var(--line)] py-1.5"
                       >
                         <span
                           className="data-sans text-sm text-[color:var(--ink-soft)]"
