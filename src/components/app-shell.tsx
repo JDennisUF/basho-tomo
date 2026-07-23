@@ -897,7 +897,11 @@ function HydratedAppShell() {
                       torikumiNameMode === "en"
                         ? entry.shikonaEn ?? getDisplayShikona(entry.shikona)
                         : getDisplayShikona(entry.shikona) || entry.shikonaEn || String(entry.rikishiId);
-                    const rankLabel = formatRankLabel(entry.rank) || getDivisionLabel(entry.division);
+                    const fullRankLabel = formatRankLabel(entry.rank) || getDivisionLabel(entry.division);
+                    const rankLabel =
+                      entry.division === "Makuuchi"
+                        ? fullRankLabel
+                        : fullRankLabel.replace(`${getDivisionLabel(entry.division)} `, "");
                     const rankTitle = getEnglishRankTitle(entry.division, entry.rank);
 
                     return (
